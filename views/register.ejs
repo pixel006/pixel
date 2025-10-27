@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Регистрация</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Регистрация</h1>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+        <p class="error"><%= error %></p>
+    <% } %>
+
+    <form action="/register" method="POST">
+        <input type="text" name="name" placeholder="Имя" required>
+        <input type="number" name="age" placeholder="Возраст" min="18" required>
+        <input type="email" name="email" placeholder="Email" required>
+        <input type="password" name="password" placeholder="Пароль" required>
+
+        <% const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null; %>
+        <% if (!adminEmail) { %>
+            <input type="text" name="referralCode" placeholder="Реферальный код" required>
+        <% } else { %>
+            <input type="text" name="referralCode" placeholder="Реферальный код ">
+        <% } %>
+
+        <button type="submit">Зарегистрироваться</button>
+    </form>
+
+    <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+</div>
+</body>
+</html>

@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Админ-панель</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<div class="container">
+    <h1>Админ-панель</h1>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Имя</th>
+                <th>Возраст</th>
+                <th>Email</th>
+                <th>Баланс</th>
+                <th>Реферальный код</th>
+                <th>Кто пригласил</th>
+                <th>Действия</th>
+            </tr>
+        </thead>
+        <tbody>
+            <% users.forEach(user => { %>
+            <tr>
+                <td><%= user.name %></td>
+                <td><%= user.age %></td>
+                <td><%= user.email %></td>
+                <td>$<%= user.balance.toFixed(2) %></td>
+                <td><%= user.referralCode %></td>
+                <td><%= user.referredBy || '-' %></td>
+                <td>
+                    <a href="/admin/deposit/<%= user._id %>" class="btn-small">Пополнить</a>
+                    <a href="/admin/withdraw/<%= user._id %>" class="btn-small">Вывести</a>
+                    <form action="/admin/users/<%= user._id %>?_method=DELETE" method="POST" style="display:inline;">
+                        <button type="submit">Удалить</button>
+                    </form>
+                </td>
+            </tr>
+            <% }) %>
+        </tbody>
+    </table>
+</div>
+</body>
+</html>
