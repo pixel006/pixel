@@ -101,7 +101,7 @@ app.post('/login', async (req, res) => {
 
         req.session.userId = user._id;
         req.session.userName = user.name;
-        req.session.userEmail = user.email;// Рендерим index.ejs с currentUser
+        req.session.userEmail = user.email;// Рендер главной страницы после логина
         res.render('index', { currentUser: user });
     } catch (err) {
         res.render('login', { error: 'Ошибка входа: ' + err.message });
@@ -111,14 +111,26 @@ app.post('/login', async (req, res) => {
 // --- Главная страница ---
 app.get('/', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
-
-    // Редирект для админа на /admin
     if (req.session.userId === "admin") return res.redirect('/admin');
 
     const user = await User.findById(req.session.userId);
     if (!user) return res.redirect('/login');
 
     res.render('index', { currentUser: user });
+});
+
+// --- Страница группы ---
+app.get('/group', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    if (req.session.userId === "admin") return res.redirect('/admin');
+
+    const currentUser = await User.findById(req.session.userId);
+    if (!currentUser) return res.redirect('/login');
+
+    // Находим всех пользователей, которые зарегистрировались по его реферальному коду
+    const team = await User.find({ referredBy: currentUser.referralCode });
+
+    res.render('group', { currentUser, team, request: req });
 });
 
 // --- Выход ---

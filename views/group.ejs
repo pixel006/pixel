@@ -1,61 +1,137 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <title>Моя группа</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
-    .container { background: white; padding: 20px; border-radius: 12px; max-width: 700px; margin: auto; }
-    h1 { color: #333; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-    th { background: #eee; }
-    .ref-link { background: #e8f0ff; padding: 10px; border-radius: 8px; margin: 10px 0; }
-    button { background: #007bff; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; }
-    button:hover { background: #0056b3; }
-  </style>
+    <meta charset="UTF-8">
+    <title>Моя команда</title>
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f4f8;
+            margin: 0;
+            padding-bottom: 60px;
+        }
+        .container {
+            max-width: 700px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2 {
+            margin: 10px 0;
+            text-align: center;
+            color: #333;
+        }
+        .ref-link {
+            background: #e8f0ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        .ref-link button {
+            margin-top: 10px;
+            background: #1E90FF;
+            color: white;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        .ref-link button:hover {
+            background: #1C86EE;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #1E90FF;
+            color: white;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        nav.fixed-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #fff;
+            padding: 12px 0;
+            text-align: center;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+        }
+        nav.fixed-footer a {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #1E90FF;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        nav.fixed-footer a:hover {
+            background-color: #1C86EE;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Моя группа</h1>
 
+<div class="container">
+    <h1>Моя команда</h1>
+
+    <!-- Реферальный код и ссылка -->
     <div class="ref-link">
-      <p><strong>Ваш реферальный код:</strong> <%= user.referralCode %></p>
-      <p><strong>Ваша ссылка для приглашений:</strong><br>
-      <code><%= request.protocol + '://' + request.get('host') + '/register?ref=' + user.referralCode %></code></p>
-      <button onclick="copyLink()">Скопировать ссылку</button>
+        <p><strong>Ваш реферальный код:</strong> <%= currentUser.referralCode %></p>
+        <p><strong>Ваша ссылка для приглашений:</strong><br>
+        <code><%= request.protocol + '://' + request.get('host') + '/register?ref=' + currentUser.referralCode %></code></p>
+        <button onclick="copyLink()">Скопировать ссылку</button>
     </div>
-
-    <script>
-      function copyLink() {
-        const link = "<%= request.protocol + '://' + request.get('host') + '/register?ref=' + user.referralCode %>";
-        navigator.clipboard.writeText(link);
-        alert('Ссылка скопирована!');
-      }
-    </script>
 
     <h2>Приглашённые пользователи</h2>
 
-    <% if (referrals.length === 0) { %>
-      <p>Пока никто не зарегистрировался по вашей ссылке 😔</p>
+    <% if (team.length === 0) { %>
+        <p>Пока никто не зарегистрировался по вашей ссылке 😔</p>
     <% } else { %>
-      <table>
-        <tr>
-          <th>Имя</th>
-          <th>Email</th>
-          <th>Пополнено</th>
-          <th>Код</th>
-        </tr>
-        <% referrals.forEach(r => { %>
-          <tr>
-            <td><%= r.name %></td>
-            <td><%= r.email %></td>
-            <td><%= r.totalDeposits %> $</td>
-            <td><%= r.referralCode %></td>
-          </tr>
-        <% }) %>
-      </table>
+        <table>
+            <thead>
+                <tr>
+                    <th>Имя</th>
+                    <th>Пополнено ($)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <% team.forEach(member => { %>
+                    <tr>
+                        <td><%= member.name %></td>
+                        <td><%= member.balance.toFixed(2) %></td>
+                    </tr>
+                <% }) %>
+            </tbody>
+        </table>
     <% } %>
-  </div>
+</div>
+
+<!-- Фиксированная кнопка внизу -->
+<nav class="fixed-footer">
+    <a href="/">Главная</a>
+</nav>
+
+<script>
+function copyLink() {
+    const link = "<%= request.protocol + '://' + request.get('host') + '/register?ref=' + currentUser.referralCode %>";
+    navigator.clipboard.writeText(link);
+    alert('Ссылка скопирована!');
+}
+</script>
+
 </body>
 </html>
