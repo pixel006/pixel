@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Моя группа</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; padding: 20px; }
+    .container { background: white; padding: 20px; border-radius: 12px; max-width: 700px; margin: auto; }
+    h1 { color: #333; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background: #eee; }
+    .ref-link { background: #e8f0ff; padding: 10px; border-radius: 8px; margin: 10px 0; }
+    button { background: #007bff; color: white; padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; }
+    button:hover { background: #0056b3; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Моя группа</h1>
+
+    <div class="ref-link">
+      <p><strong>Ваш реферальный код:</strong> <%= user.referralCode %></p>
+      <p><strong>Ваша ссылка для приглашений:</strong><br>
+      <code><%= request.protocol + '://' + request.get('host') + '/register?ref=' + user.referralCode %></code></p>
+      <button onclick="copyLink()">Скопировать ссылку</button>
+    </div>
+
+    <script>
+      function copyLink() {
+        const link = "<%= request.protocol + '://' + request.get('host') + '/register?ref=' + user.referralCode %>";
+        navigator.clipboard.writeText(link);
+        alert('Ссылка скопирована!');
+      }
+    </script>
+
+    <h2>Приглашённые пользователи</h2>
+
+    <% if (referrals.length === 0) { %>
+      <p>Пока никто не зарегистрировался по вашей ссылке 😔</p>
+    <% } else { %>
+      <table>
+        <tr>
+          <th>Имя</th>
+          <th>Email</th>
+          <th>Пополнено</th>
+          <th>Код</th>
+        </tr>
+        <% referrals.forEach(r => { %>
+          <tr>
+            <td><%= r.name %></td>
+            <td><%= r.email %></td>
+            <td><%= r.totalDeposits %> $</td>
+            <td><%= r.referralCode %></td>
+          </tr>
+        <% }) %>
+      </table>
+    <% } %>
+  </div>
+</body>
+</html>

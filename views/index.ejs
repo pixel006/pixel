@@ -4,17 +4,85 @@
     <meta charset="UTF-8">
     <title>Главная</title>
     <link rel="stylesheet" href="/style.css">
+    <style>
+        body {
+            margin: 0;
+            padding-bottom: 60px; /* Чтобы контент не прятался за футером */
+            font-family: Arial, sans-serif;
+            background-color: #f9f9f9;
+        }
+        .container {
+            max-width: 600px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, p {
+            margin: 10px 0;
+        }
+        .buttons {
+            margin-top: 20px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 10px 20px;
+            margin: 5px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background-color: #45a049;
+        }
+        nav.fixed-footer {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #eee;
+            padding: 10px 0;
+            text-align: center;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+        }
+        nav.fixed-footer a {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        nav.fixed-footer a:hover {
+            background-color: #45a049;
+        }
+    </style>
 </head>
 <body>
-    <div class="container">
-        <!-- Баланс -->
-        <h2>Общий баланс: $<%= currentUser.balance.toFixed(2) %></h2>
 
-        <!-- Кнопки Пополнить и Вывести -->
-        <div class="buttons">
-            <a href="/deposit" class="btn">Пополнить</a>
-            <a href="/withdraw" class="btn">Вывести</a>
-        </div>
+<div class="container">
+    <h1>Привет, <%= currentUser.name %>!</h1>
+    <p>Email: <%= currentUser.email %></p>
+
+    <h2>Баланс: $<%= currentUser.balance.toFixed(2) %></h2>
+
+    <!-- Кнопки Пополнить и Вывести -->
+    <div class="buttons">
+        <a href="/deposit" class="btn">Пополнить</a>
+        <a href="/withdraw" class="btn">Вывести</a>
     </div>
+</div>
+
+<!-- Фиксированная кнопка внизу -->
+<nav class="fixed-footer">
+    <a href="/group">Группа</a>
+</nav>
+
 </body>
 </html>
