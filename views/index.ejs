@@ -15,18 +15,20 @@
 
         /* --- Шапка --- */
         header {
-            background: #f0f4f8; /* цвет как у фона страницы */
+            background: #f0f4f8; /* точно такой же цвет, как фон страницы */
             color: #333;
             padding: 15px 20px;
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            box-shadow: none; /* убрали тень */
+            border-bottom: none; /* убрали возможную границу */
         }
 
+        /* Кнопка выхода */
         a.logout-btn {
-            background: #fff;
-            border: 1px solid #ccc;
+            background: #f0f4f8; /* сливается с фоном */
+            border: none;
             color: #333;
             text-decoration: none;
             padding: 8px 14px;
@@ -35,7 +37,7 @@
             transition: background 0.3s, color 0.3s;
         }
         a.logout-btn:hover {
-            background: #e0e0e0;
+            background: #e0e0e0; /* легкий эффект при наведении */
         }
 
         /* --- Контейнер --- */
@@ -100,7 +102,7 @@
 </head>
 <body>
 
-    <!-- Только кнопка выхода -->
+    <!-- Шапка с кнопкой выхода -->
     <header>
         <a href="/logout" class="logout-btn">Выйти</a>
     </header>
