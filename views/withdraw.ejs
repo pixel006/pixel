@@ -3,8 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title><%= tx ? 'Вывод средств успешен' : (user ? 'Пополнение пользователя' : 'Вывод средств') %></title>
+
+<%
+  // Безопасные проверки, чтобы не было ReferenceError
+  const txSafe = typeof tx !== 'undefined' && tx ? tx : null;
+  const userSafe = typeof user !== 'undefined' && user ? user : null;
+  const errorSafe = typeof error !== 'undefined' && error ? error : null;
+  const currentSafe = typeof currentUser !== 'undefined' && currentUser ? currentUser : null;
+%>
+
+<title><%= txSafe ? 'Вывод средств успешен' : (userSafe ? 'Пополнение пользователя' : 'Вывод средств') %></title>
 <link rel="stylesheet" href="/style.css">
+
 <style>
     body {
         font-family: Arial, sans-serif;
@@ -57,22 +67,22 @@
 <body>
 <div class="container">
 
-<% if (tx) { %>
+<% if (txSafe) { %>
     <!-- Страница успешного вывода -->
     <h1>Запрос на вывод принят</h1>
-    <p>Сумма: $<%= tx.amount.toFixed(2) %></p>
-    <p>Комиссия 2%: $<%= tx.fee.toFixed(2) %></p>
-    <p>Адрес для перевода: <%= tx.destination %></p>
-    <p>Статус: <%= tx.status %></p>
+    <p>Сумма: $<%= txSafe.amount.toFixed(2) %></p>
+    <p>Комиссия 2%: $<%= txSafe.fee.toFixed(2) %></p>
+    <p>Адрес для перевода: <%= txSafe.destination %></p>
+    <p>Статус: <%= txSafe.status %></p>
     <p><a href="/">Вернуться на главную</a></p>
 
-<% } else if (user) { %>
+<% } else if (userSafe) { %>
     <!-- Форма пополнения пользователя (для админа) -->
-    <h1>Пополнить баланс пользователя <%= user.name %></h1>
-    <% if (error) { %>
-        <p class="error"><%= error %></p>
+    <h1>Пополнить баланс пользователя <%= userSafe.name %></h1>
+    <% if (errorSafe) { %>
+        <p class="error"><%= errorSafe %></p>
     <% } %>
-    <form action="/admin/deposit/<%= user._id %>" method="POST">
+    <form action="/admin/deposit/<%= userSafe._id %>" method="POST">
         <input type="number" name="amount" placeholder="Сумма" step="0.01" required>
         <button type="submit">Пополнить</button>
     </form>
@@ -81,10 +91,10 @@
 <% } else { %>
     <!-- Форма вывода для обычного пользователя -->
     <h1>Вывод средств</h1>
-    <% if (error) { %>
-        <p class="error"><%= error %></p>
+    <% if (errorSafe) { %>
+        <p class="error"><%= errorSafe %></p>
     <% } %>
-    <p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>
+    <p>Баланс: $<%= currentSafe && currentSafe.balance ? currentSafe.balance.toFixed(2) : '0.00' %></p>
     <form action="/withdraw" method="POST">
         <input type="number" name="amount" placeholder="Сумма" step="0.01" min="0" required>
         <input type="text" name="cryptoAddress" placeholder="Адрес криптокошелька" required>
