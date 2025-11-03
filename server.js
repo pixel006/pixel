@@ -49,7 +49,7 @@ app.post('/register', async (req, res) => {
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) return res.render('register', { error: 'Пользователь с таким email уже зарегистрирован' });
 
-        // Создание пользователя с начальным балансом
+        // Создание пользователя с начальным балансом и пустой историей операций
         const user = new User({
             name,
             email: normalizedEmail,
@@ -102,8 +102,7 @@ app.post('/login', async (req, res) => {
 
         req.session.userId = user._id;
         req.session.userName = user.name;
-        req.session.userEmail = user.email;// Рендер главной страницы после логина
-        res.render('index', { currentUser: user });
+        req.session.userEmail = user.email;res.render('index', { currentUser: user });
     } catch (err) {
         res.render('login', { error: 'Ошибка входа: ' + err.message });
     }
