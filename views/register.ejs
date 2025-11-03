@@ -21,9 +21,10 @@
 
         <% const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null; %>
         <% if (!adminEmail) { %>
-            <input type="text" name="referralCode" placeholder="Реферальный код" required>
+            <!-- Реферальный код для обычных пользователей -->
+            <input type="text" name="referralCode" id="referralCode" placeholder="Реферальный код" required>
         <% } else { %>
-            <input type="text" name="referralCode" placeholder="Реферальный код ">
+            <input type="text" name="referralCode" id="referralCode" placeholder="Реферальный код">
         <% } %>
 
         <button type="submit">Зарегистрироваться</button>
@@ -31,5 +32,18 @@
 
     <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
 </div>
+
+<!-- Скрипт для авто-заполнения реферального кода -->
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+    const ref = urlParams.get('ref');
+    if(ref) {
+        const referralInput = document.getElementById('referralCode');
+        if(referralInput) {
+            referralInput.value = ref;
+        }
+    }
+</script>
+
 </body>
 </html>
