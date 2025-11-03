@@ -256,7 +256,7 @@ app.post('/withdraw', async (req, res) => {
     user.balance -= totalDeduction;
     await user.save();
 
-    res.render('withdraw-success', { currentUser: user, tx });
+    res.render('withdraw', { currentUser: user, tx });
 });
 
 // =======================
