@@ -2,15 +2,43 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Главная</title>
+    <title>Личный кабинет</title>
     <link rel="stylesheet" href="/style.css">
     <style>
         body {
             margin: 0;
-            padding-bottom: 60px; /* Чтобы контент не прятался за футером */
+            padding-bottom: 80px; /* чтобы футер не перекрывал контент */
             font-family: Arial, sans-serif;
             background-color: #f0f4f8;
+            color: #333;
         }
+
+        /* --- Шапка --- */
+        header {
+            background: #333;
+            color: #fff;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        header h2 {
+            margin: 0;
+        }
+        a.logout-btn {
+            background: #e63946;
+            color: #fff;
+            text-decoration: none;
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+        a.logout-btn:hover {
+            background: #c51c29;
+        }
+
+        /* --- Контейнер --- */
         .container {
             max-width: 600px;
             margin: 40px auto;
@@ -24,6 +52,12 @@
             margin: 20px 0;
             font-weight: normal;
         }
+        .balance {
+            font-size: 1.3em;
+            margin-bottom: 15px;
+        }
+
+        /* --- Кнопки --- */
         .buttons {
             margin-top: 20px;
         }
@@ -31,7 +65,7 @@
             display: inline-block;
             padding: 12px 25px;
             margin: 10px;
-            background-color: #5c6bc0; /* синий цвет */
+            background-color: #5c6bc0;
             color: white;
             text-decoration: none;
             border-radius: 5px;
@@ -39,8 +73,10 @@
             transition: background 0.3s;
         }
         .btn:hover {
-            background-color: #5c6bc0;
+            background-color: #3f4fa3;
         }
+
+        /* --- Футер --- */
         nav.fixed-footer {
             position: fixed;
             bottom: 0;
@@ -62,24 +98,35 @@
             transition: background 0.3s;
         }
         nav.fixed-footer a:hover {
-            background-color: #5c6bc0;
+            background-color: #3f4fa3;
         }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Баланс: $<%= currentUser.balance.toFixed(2) %></h2>
+    <!-- Шапка с приветствием и кнопкой выхода -->
+    <header>
+        <h2>Добро пожаловать, <%= currentUser.name %>!</h2>
+        <a href="/logout" class="logout-btn">Выйти</a>
+    </header>
 
-    <div class="buttons">
-        <a href="/deposit" class="btn">Пополнить</a>
-        <a href="/withdraw" class="btn">Вывести</a>
+    <!-- Основной контент -->
+    <div class="container">
+        <p><strong>Email:</strong> <%= currentUser.email %></p>
+        <p><strong>Возраст:</strong> <%= currentUser.age %></p>
+        <p class="balance"><strong>Баланс:</strong> $<%= currentUser.balance.toFixed(2) %></p>
+        <p><strong>Ваш реферальный код:</strong> <%= currentUser.referralCode %></p>
+
+        <div class="buttons">
+            <a href="/deposit" class="btn">Пополнить</a>
+            <a href="/withdraw" class="btn">Вывести</a>
+        </div>
     </div>
-</div>
 
-<nav class="fixed-footer">
-    <a href="/group">Группа</a>
-</nav>
+    <!-- Нижняя навигация -->
+    <nav class="fixed-footer">
+        <a href="/group">👥 Моя группа</a>
+    </nav>
 
 </body>
 </html>
