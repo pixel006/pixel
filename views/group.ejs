@@ -4,15 +4,20 @@
     <meta charset="UTF-8">
     <title>Моя команда</title>
     <link rel="stylesheet" href="/style.css">
+
+    <!-- Мета-тег для мобильных устройств -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <style>
         body {
             font-family: Arial, sans-serif;
             background-color: #f0f4f8;
             margin: 0;
-            padding-bottom: 60px;
+            padding-bottom: 80px; /* чтобы футер не перекрывал контент */
         }
         .container {
             max-width: 700px;
+            width: 90%; /* адаптивно для мобильных */
             margin: 40px auto;
             padding: 20px;
             background: #fff;
@@ -41,12 +46,13 @@
             cursor: pointer;
         }
         .ref-link button:hover {
-            background: #5c6bc0;
+            background: #3f4fa3;
         }
         table {
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            word-break: break-word; /* чтобы текст не вылезал за пределы */
         }
         th, td {
             padding: 12px;
@@ -72,14 +78,18 @@
         }
         nav.fixed-footer a {
             display: inline-block;
-            padding: 12px 25px;
+            width: 90%;
+            max-width: 250px;
+            padding: 12px 0;
             background-color: #5c6bc0;
             color: white;
             text-decoration: none;
             border-radius: 5px;
+            font-weight: bold;
+            transition: background 0.3s;
         }
         nav.fixed-footer a:hover {
-            background-color: #5c6bc0;
+            background-color: #3f4fa3;
         }
     </style>
 </head>
@@ -99,7 +109,7 @@
     <h2>Приглашённые пользователи</h2>
 
     <% if (team.length === 0) { %>
-        <p>Пока никто не зарегистрировался по вашей ссылке </p>
+        <p>Пока никто не зарегистрировался по вашей ссылке</p>
     <% } else { %>
         <table>
             <thead>
@@ -123,9 +133,7 @@
 <!-- Фиксированная кнопка внизу -->
 <nav class="fixed-footer">
     <a href="/">Главная</a>
-</nav>
-
-<script>
+</nav><script>
 function copyLink() {
     const link = "<%= request.protocol + '://' + request.get('host') + '/register?ref=' + currentUser.referralCode %>";
     navigator.clipboard.writeText(link);
