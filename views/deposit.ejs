@@ -83,16 +83,24 @@
         <p class="error"><%= error %></p>
     <% } %>
 
-    <p>Текущий баланс: $<%= currentUser.balance.toFixed(2) %></p>
+    <% if (currentUser) { %>
+        <p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>
+        <input type="number" id="amount" placeholder="Сумма" step="0.01" min="0">
+        <select id="method">
+            <option value="metamask">Metamask</option>
+            <option value="walletconnect">WalletConnect</option>
+            <option value="koshelekru">Кошелёк.ру</option>
+            <option value="bybit">Bybit</option>
+        </select>
+        <button id="depositBtn">Пополнить</button>
 
-    <input type="number" id="amount" placeholder="Сумма" step="0.01" min="0">
-    <select id="method">
-        <option value="metamask">Metamask</option>
-        <option value="walletconnect">WalletConnect</option>
-        <option value="koshelekru">Кошелёк.ру</option>
-        <option value="bybit">Bybit</option>
-    </select>
-    <button id="depositBtn">Пополнить</button>
+        <!-- Блок для отображения адреса кошелька -->
+        <div id="walletAddressBlock" style="display:none; margin-top: 20px; text-align:center;">
+            <p>Переведите сумму на адрес:</p>
+            <input type="text" id="walletAddress" readonly style="width:100%; padding:8px; font-size:16px;">
+            <button id="copyAddressBtn">Скопировать адрес</button>
+        </div>
+    <% } %>
 </div>
 
 <script>
@@ -104,16 +112,28 @@ document.getElementById('depositBtn').addEventListener('click', async () => {
         return alert('Введите корректную сумму');
     }
 
+    // Адреса для криптокошельков
+    const walletAddresses = {
+        koshelekru: '0xKoshelekRUExampleAddress123',
+        bybit: '0xBybitExampleAddress456'
+    };
+
+    if (method === 'koshelekru' || method === 'bybit') {
+        const addressInput = document.getElementById('walletAddress');
+        addressInput.value = walletAddresses[method];
+        document.getElementById('walletAddressBlock').style.display = 'block';
+        return;
+    }
+
+    // Для остальных методов (Metamask/WalletConnect)
     try {
         const res = await fetch('/deposit', {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'},
+            headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ amount, method })
         });
 
-        const data = await res.json();
-
-        if (data.success && data.paymentUrl) {
+        const data = await res.json();if (data.success && data.paymentUrl) {
             window.location.href = data.paymentUrl;
         } else {
             alert(data.message || 'Произошла ошибка, попробуйте снова');
@@ -122,6 +142,16 @@ document.getElementById('depositBtn').addEventListener('click', async () => {
         console.error(err);
         alert('Ошибка сервера');
     }
+});
+
+// Копирование адреса кошелька
+document.getElementById('copyAddressBtn').addEventListener('click', () => {
+    const addressInput = document.getElementById('walletAddress');
+    addressInput.select();
+    addressInput.setSelectionRange(0, 99999);
+    navigator.clipboard.writeText(addressInput.value).then(() => {
+        alert('Адрес скопирован!');
+    });
 });
 </script>
 
