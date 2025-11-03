@@ -2,96 +2,45 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>История операций</title>
+    <title>История депозитов и начислений</title>
     <link rel="stylesheet" href="/style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f4f8;
-            margin: 0;
-            padding-bottom: 80px; /* чтобы футер не перекрывал контент */
-        }
-
-        .container {
-            max-width: 700px;
-            width: 90%;
-            margin: 40px auto;
-            padding: 20px;
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 20px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        th, td {
-            padding: 12px;
-            border-bottom: 1px solid #ddd;
-            text-align: left;
-            word-break: break-word;
-        }
-
-        th {
-            background-color: #5c6bc0;
-            color: white;
-        }
-
-        tr:hover {
-            background-color: #f1f1f1;
-        }
-
-        p.no-transactions {
-            text-align: center;
-            font-size: 1em;
-            color: #555;
-            margin-top: 20px;
-        }
-
-        nav.fixed-footer {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 100%;
-            background: #fff;
-            padding: 12px 0;
-            text-align: center;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
-        }
-
-        nav.fixed-footer a {
-            display: inline-block;
-            padding: 12px 25px;
-            margin: 0 5px;
-            background-color: #5c6bc0;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-
-        nav.fixed-footer a:hover {
-            background-color: #3f4fa3;
-        }
+        body { font-family: Arial, sans-serif; background-color: #f0f4f8; margin: 0; padding-bottom: 80px; }
+        .container { max-width: 700px; width: 90%; margin: 40px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; margin-bottom: 20px; }
+        ul { list-style: none; padding: 0; }
+        li { padding: 10px 0; border-bottom: 1px solid #ddd; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; word-break: break-word; }
+        th { background-color: #5c6bc0; color: white; }
+        tr:hover { background-color: #f1f1f1; }
+        p.no-transactions { text-align: center; font-size: 1em; color: #555; margin-top: 20px; }
+        nav.fixed-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; padding: 12px 0; text-align: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
+        nav.fixed-footer a { display: inline-block; padding: 12px 25px; margin: 0 5px; background-color: #5c6bc0; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; }
+        nav.fixed-footer a:hover { background-color: #3f4fa3; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>История операций</h1>
+    <h1>История депозитов и начислений</h1>
 
+    <% if (!deposits || deposits.length === 0) { %>
+        <p class="no-transactions">Депозиты пока отсутствуют.</p>
+    <% } else { %>
+        <ul>
+            <% deposits.forEach(dep => { %>
+                <li>
+                    Депозит: <%= dep.principal.toFixed(2) %>$ — <%= dep.status === 'active' ? 'В работе' : 'Завершён' %><br>
+                    Начислено процентов: <%= dep.accrued.toFixed(2) %>$
+                </li>
+            <% }) %>
+        </ul>
+    <% } %>
+
+    <h2>Транзакции</h2>
     <% if (!transactions || transactions.length === 0) { %>
         <p class="no-transactions">Операций пока нет.</p>
     <% } else { %>
@@ -101,14 +50,16 @@
                     <th>Тип</th>
                     <th>Сумма ($)</th>
                     <th>Дата</th>
+                    <th>Описание</th>
                 </tr>
             </thead>
             <tbody>
-                <% transactions.forEach(op => { %>
+                <% transactions.forEach(tx => { %>
                     <tr>
-                        <td><%= op.type %></td>
-                        <td><%= op.amount.toFixed(2) %></td>
-                        <td><%= new Date(op.date).toLocaleString() %></td>
+                        <td><%= tx.type %></td>
+                        <td><%= tx.amount.toFixed(2) %></td>
+                        <td><%= new Date(tx.date).toLocaleString() %></td>
+                        <td><%= tx.description %></td>
                     </tr>
                 <% }) %>
             </tbody>
