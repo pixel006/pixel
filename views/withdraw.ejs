@@ -1,24 +1,98 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Пополнение</title>
-    <link rel="stylesheet" href="/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><%= tx ? 'Вывод средств успешен' : (user ? 'Пополнение пользователя' : 'Вывод средств') %></title>
+<link rel="stylesheet" href="/style.css">
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f0f4f8;
+        margin: 0;
+        padding-bottom: 60px;
+    }
+    .container {
+        max-width: 480px;
+        margin: 40px auto;
+        padding: 20px;
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 20px;
+        font-size: 22px;
+    }
+    input, button {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+    button {
+        background-color: #5c6bc0;
+        color: white;
+        border: none;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #3f4fa3;
+    }
+    .error {
+        color: red;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    p {
+        text-align: center;
+    }
+</style>
 </head>
 <body>
-    <div class="container">
-        <h1>Пополнить баланс пользователя <%= user.name %></h1>
+<div class="container">
 
-        <% if (error) { %>
-            <p class="error"><%= error %></p>
-        <% } %>
+<% if (tx) { %>
+    <!-- Страница успешного вывода -->
+    <h1>Запрос на вывод принят</h1>
+    <p>Сумма: $<%= tx.amount.toFixed(2) %></p>
+    <p>Комиссия 2%: $<%= tx.fee.toFixed(2) %></p>
+    <p>Адрес для перевода: <%= tx.destination %></p>
+    <p>Статус: <%= tx.status %></p>
+    <p><a href="/">Вернуться на главную</a></p>
 
-        <form action="/admin/deposit/<%= user._id %>" method="POST">
-            <input type="number" name="amount" placeholder="Сумма" step="0.01" required>
-            <button type="submit">Пополнить</button>
-        </form>
+<% } else if (user) { %>
+    <!-- Форма пополнения пользователя (для админа) -->
+    <h1>Пополнить баланс пользователя <%= user.name %></h1>
+    <% if (error) { %>
+        <p class="error"><%= error %></p>
+    <% } %>
+    <form action="/admin/deposit/<%= user._id %>" method="POST">
+        <input type="number" name="amount" placeholder="Сумма" step="0.01" required>
+        <button type="submit">Пополнить</button>
+    </form>
+    <p><a href="/admin">Назад в админку</a></p>
 
-        <p><a href="/admin">Назад в админку</a></p>
-    </div>
+<% } else { %>
+    <!-- Форма вывода для обычного пользователя -->
+    <h1>Вывод средств</h1>
+    <% if (error) { %>
+        <p class="error"><%= error %></p>
+    <% } %>
+    <p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>
+    <form action="/withdraw" method="POST">
+        <input type="number" name="amount" placeholder="Сумма" step="0.01" min="0" required>
+        <input type="text" name="cryptoAddress" placeholder="Адрес криптокошелька" required>
+        <button type="submit">Подтвердить</button>
+    </form>
+    <p><a href="/">Назад</a></p>
+<% } %>
+
+</div>
 </body>
 </html>

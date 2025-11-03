@@ -208,6 +208,58 @@ app.get('/history', async (req, res) => {
 });
 
 // =======================
+// --- Вывод средств ---
+// =======================
+app.get('/withdraw', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    if (req.session.userId === "admin") return res.redirect('/admin');
+
+    const user = await User.findById(req.session.userId);
+    res.render('withdraw', { currentUser: user, error: null });
+});
+
+app.post('/withdraw', async (req, res) => {
+    if (!req.session.userId) return res.status(401).send('Не авторизован');
+
+    const user = await User.findById(req.session.userId);
+    const { amount, cryptoAddress } = req.body;
+
+    const now = new Date();
+    const day = now.getDay(); // 0 = воскресенье
+    const hour = now.getHours();if (day !== 0 || hour < 8 || hour >= 20) {
+        return res.render('withdraw', { currentUser: user, error: 'Вывод доступен только в воскресенье с 08:00 до 20:00' });
+    }
+
+    const numericAmount = parseFloat(amount);
+    if (!numericAmount || numericAmount <= 0) {
+        return res.render('withdraw', { currentUser: user, error: 'Введите корректную сумму' });
+    }
+
+    if (numericAmount > user.balance) {
+        return res.render('withdraw', { currentUser: user, error: 'Сумма превышает баланс аккаунта' });
+    }
+
+    const fee = numericAmount * 0.02;
+    const totalDeduction = numericAmount + fee;
+
+    const tx = {
+        type: 'withdraw',
+        amount: numericAmount,
+        fee,
+        currency: 'USDT',
+        date: new Date(),
+        destination: cryptoAddress,
+        status: 'pending'
+    };
+
+    user.transactions.push(tx);
+    user.balance -= totalDeduction;
+    await user.save();
+
+    res.render('withdraw-success', { currentUser: user, tx });
+});
+
+// =======================
 // --- Выход ---
 // =======================
 app.get('/logout', (req, res) => {
@@ -226,7 +278,8 @@ app.get('/admin', async (req, res) => {
 
     const users = await User.find();
     res.render('admin', { users });
-});// --- Удаление пользователя ---
+});
+
 app.delete('/admin/users/:id', async (req, res) => {
     const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
     if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
