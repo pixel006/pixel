@@ -56,7 +56,8 @@ app.post('/register', async (req, res) => {
             age,
             password,
             referredBy: normalizedEmail === adminEmail ? "000001" : referralCode,
-            balance: 0 // начальный баланс
+            balance: 0,
+            transactions: [] // пустая история операций
         });
         await user.save();
 
@@ -127,10 +128,22 @@ app.get('/group', async (req, res) => {
     const currentUser = await User.findById(req.session.userId);
     if (!currentUser) return res.redirect('/login');
 
-    // Находим всех пользователей, которые зарегистрировались по его реферальному коду
     const team = await User.find({ referredBy: currentUser.referralCode });
 
     res.render('group', { currentUser, team, request: req });
+});
+
+// --- История операций ---
+app.get('/history', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    if (req.session.userId === "admin") return res.redirect('/admin');
+
+    const currentUser = await User.findById(req.session.userId);
+    if (!currentUser) return res.redirect('/login');
+
+    const transactions = currentUser.transactions || [];
+
+    res.render('history', { currentUser, transactions });
 });
 
 // --- Выход ---

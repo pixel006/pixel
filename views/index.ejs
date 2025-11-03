@@ -11,7 +11,7 @@
     <style>
         body {
             margin: 0;
-            padding-bottom: 80px; /* чтобы футер не перекрывал контент */
+            padding-bottom: 100px; /* чтобы футер не перекрывал контент */
             font-family: Arial, sans-serif;
             background-color: #f0f4f8;
             color: #333;
@@ -19,7 +19,7 @@
 
         /* --- Шапка --- */
         header {
-            background: #f0f4f8; /* сливается с фоном */
+            background: #f0f4f8;
             color: #333;
             padding: 15px 20px;
             display: flex;
@@ -46,7 +46,7 @@
         /* --- Контейнер --- */
         .container {
             max-width: 600px;
-            width: 90%; /* адаптивно под экран */
+            width: 90%;
             margin: 40px auto;
             padding: 20px;
             background: #fff;
@@ -66,8 +66,8 @@
         }
         .btn {
             display: inline-block;
-            width: 80%;       /* адаптивная ширина */
-            max-width: 250px; /* не растягивается сильно */
+            width: 80%;
+            max-width: 250px;
             padding: 12px 0;
             margin: 10px auto;
             background-color: #5c6bc0;
@@ -91,19 +91,23 @@
             padding: 12px 0;
             text-align: center;
             box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: center;
+            gap: 10px; /* расстояние между кнопками */
+            flex-wrap: wrap;
         }
         nav.fixed-footer a {
             display: inline-block;
-            width: 90%;
-            max-width: 250px;
+            width: 45%;
+            max-width: 200px;
             padding: 12px 0;
             background-color: #5c6bc0;
             color: white;
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
-            margin: auto;
             transition: background 0.3s;
+            text-align: center;
         }
         nav.fixed-footer a:hover {
             background-color: #3f4fa3;
@@ -127,9 +131,10 @@
         </div>
     </div>
 
-    <!-- Нижняя навигация -->
+    <!-- Нижняя навигация с двумя кнопками -->
     <nav class="fixed-footer">
         <a href="/group">Моя группа</a>
+        <a href="/history">История</a>
     </nav>
 
 </body>
