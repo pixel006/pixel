@@ -26,7 +26,9 @@ mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB connected ✅'))
     .catch(err => console.log('MongoDB connection error:', err));
 
-// --- Регистрация пользователя ---
+// =======================
+// --- Регистрация ---
+// =======================
 app.get('/register', (req, res) => res.render('register', { error: null }));
 
 app.post('/register', async (req, res) => {
@@ -38,18 +40,15 @@ app.post('/register', async (req, res) => {
         const normalizedEmail = email.toLowerCase();
         const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
 
-        // Проверка реферального кода для обычных пользователей
         if (adminEmail && normalizedEmail !== adminEmail) {
             if (!referralCode) return res.render('register', { error: 'Реферальный код обязателен' });
             const refUser = await User.findOne({ referralCode });
             if (!refUser) return res.render('register', { error: 'Некорректный реферальный код' });
         }
 
-        // Проверка уникальности email
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) return res.render('register', { error: 'Пользователь с таким email уже зарегистрирован' });
 
-        // Создание пользователя с начальным балансом и пустой историей операций
         const user = new User({
             name,
             email: normalizedEmail,
@@ -61,7 +60,6 @@ app.post('/register', async (req, res) => {
         });
         await user.save();
 
-        // Сессия
         req.session.userId = user._id;
         req.session.userName = user.name;
         req.session.userEmail = user.email;
@@ -73,13 +71,16 @@ app.post('/register', async (req, res) => {
     }
 });
 
+// =======================
 // --- Логин ---
+// =======================
 app.get('/login', (req, res) => res.render('login', { error: null }));
 
 app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email) return res.render('login', { error: 'Email обязателен' });
+
         const normalizedEmail = email.toLowerCase();
         const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
         const adminPassword = process.env.ADMIN_PASSWORD || null;
@@ -97,16 +98,18 @@ app.post('/login', async (req, res) => {
         if (!user) return res.render('login', { error: 'Неверный email или пароль' });
 
         const isMatch = await user.comparePassword(password);
-        if (!isMatch) return res.render('login', { error: 'Неверный email или пароль' });req.session.userId = user._id;
+        if (!isMatch) return res.render('login', { error: 'Неверный email или пароль' });
+
+        req.session.userId = user._id;
         req.session.userName = user.name;
         req.session.userEmail = user.email;
-        res.render('index', { currentUser: user });
+        res.redirect('/');
     } catch (err) {
         res.render('login', { error: 'Ошибка входа: ' + err.message });
     }
-});
-
+});// =======================
 // --- Главная страница ---
+// =======================
 app.get('/', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     if (req.session.userId === "admin") return res.redirect('/admin');
@@ -117,7 +120,9 @@ app.get('/', async (req, res) => {
     res.render('index', { currentUser: user });
 });
 
+// =======================
 // --- Страница группы ---
+// =======================
 app.get('/group', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     if (req.session.userId === "admin") return res.redirect('/admin');
@@ -130,16 +135,24 @@ app.get('/group', async (req, res) => {
     res.render('group', { currentUser, team, request: req });
 });
 
+// =======================
 // --- Пополнение баланса ---
+// =======================
 app.get('/deposit', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     const user = await User.findById(req.session.userId);
-    res.render('deposit', { currentUser: user });
+    if (!user) return res.redirect('/login');
+    res.render('deposit', { currentUser: user, error: null });
 });
 
 app.post('/deposit', async (req, res) => {
+    if (!req.session.userId) return res.status(401).json({ success: false, message: 'Не авторизован' });
+
     const { amount, method } = req.body;
+    if (!amount || amount <= 0) return res.status(400).json({ success: false, message: 'Некорректная сумма' });
+
     const user = await User.findById(req.session.userId);
+    if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
 
     const tx = {
         type: 'deposit',
@@ -153,35 +166,36 @@ app.post('/deposit', async (req, res) => {
     user.transactions.push(tx);
     await user.save();
 
-    // Генерация ссылки на оплату
-    let paymentUrl = '#';
-    switch(method) {
-        case 'metamask': paymentUrl =`/pay/metamask/${tx.amount}`; break;
-        case 'walletconnect': paymentUrl = `/pay/walletconnect/${tx.amount}`; break;
-        case 'koshelekru': paymentUrl = `/pay/koshelekru/${tx.amount}`; break;
-        case 'bybit': paymentUrl = `/pay/bybit/${tx.amount}`; break;
-    }
-
+    const paymentUrl = `/pay/${method}/${tx.amount}`;
     res.json({ success: true, paymentUrl });
 });
 
 // --- Симуляция оплаты ---
 app.get('/pay/:method/:amount', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+
     const { method, amount } = req.params;
     const user = await User.findById(req.session.userId);
+    if (!user) return res.redirect('/login');
 
-    const tx = user.transactions.reverse().find(t => t.amount === parseFloat(amount) && t.status === 'pending');
+    const tx = [...user.transactions].reverse().find(t => t.amount === parseFloat(amount) && t.status === 'pending');
+
     if (tx) {
         tx.status = 'completed';
         user.balance += parseFloat(amount);
         await user.save();
     }
 
-    res.send(`<h2>Пополнение через ${method} на ${amount}$ прошло успешно!</h2>
-              <a href="/">Вернуться на главную</a>`);
+    res.send(`
+        <h2>Пополнение через ${method} на ${amount}$ прошло успешно!</h2>
+        <p>Текущий баланс: $${user.balance.toFixed(2)}</p>
+        <a href="/">Вернуться на главную</a>
+    `);
 });
 
+// =======================
 // --- История операций ---
+// =======================
 app.get('/history', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
     if (req.session.userId === "admin") return res.redirect('/admin');
@@ -193,14 +207,16 @@ app.get('/history', async (req, res) => {
     res.render('history', { currentUser, transactions });
 });
 
+// =======================
 // --- Выход ---
+// =======================
 app.get('/logout', (req, res) => {
-    req.session.destroy(() => {
-        res.redirect('/login');
-    });
+    req.session.destroy(() => res.redirect('/login'));
 });
 
+// =======================
 // --- Админ-панель ---
+// =======================
 app.get('/admin', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
 
@@ -210,16 +226,18 @@ app.get('/admin', async (req, res) => {
 
     const users = await User.find();
     res.render('admin', { users });
-});
-
-// --- Удаление пользователя ---
+});// --- Удаление пользователя ---
 app.delete('/admin/users/:id', async (req, res) => {
     const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
     if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
-        return res.status(403).send('Доступ запрещён');await User.findByIdAndDelete(req.params.id);
+        return res.status(403).send('Доступ запрещён');
+
+    await User.findByIdAndDelete(req.params.id);
     res.redirect('/admin');
 });
 
+// =======================
 // --- Запуск сервера ---
+// =======================
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT} 🚀`));
