@@ -10,11 +10,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@walletconnect/web3-provider": "^1.8.0",
     "bcrypt": "^6.0.0",
     "bcryptjs": "^3.0.2",
     "connect-mongo": "^5.1.0",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
+    "ethers": "^6.15.0",
     "express": "^5.1.0",
     "express-session": "^1.18.2",
     "method-override": "^3.0.0",

@@ -57,7 +57,7 @@ app.post('/register', async (req, res) => {
             password,
             referredBy: normalizedEmail === adminEmail ? "000001" : referralCode,
             balance: 0,
-            transactions: [] // пустая история операций
+            transactions: []
         });
         await user.save();
 
@@ -80,7 +80,6 @@ app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email) return res.render('login', { error: 'Email обязателен' });
-
         const normalizedEmail = email.toLowerCase();
         const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
         const adminPassword = process.env.ADMIN_PASSWORD || null;
@@ -98,11 +97,10 @@ app.post('/login', async (req, res) => {
         if (!user) return res.render('login', { error: 'Неверный email или пароль' });
 
         const isMatch = await user.comparePassword(password);
-        if (!isMatch) return res.render('login', { error: 'Неверный email или пароль' });
-
-        req.session.userId = user._id;
+        if (!isMatch) return res.render('login', { error: 'Неверный email или пароль' });req.session.userId = user._id;
         req.session.userName = user.name;
-        req.session.userEmail = user.email;res.render('index', { currentUser: user });
+        req.session.userEmail = user.email;
+        res.render('index', { currentUser: user });
     } catch (err) {
         res.render('login', { error: 'Ошибка входа: ' + err.message });
     }
@@ -132,6 +130,57 @@ app.get('/group', async (req, res) => {
     res.render('group', { currentUser, team, request: req });
 });
 
+// --- Пополнение баланса ---
+app.get('/deposit', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+    const user = await User.findById(req.session.userId);
+    res.render('deposit', { currentUser: user });
+});
+
+app.post('/deposit', async (req, res) => {
+    const { amount, method } = req.body;
+    const user = await User.findById(req.session.userId);
+
+    const tx = {
+        type: 'deposit',
+        amount: parseFloat(amount),
+        currency: 'USDT',
+        date: new Date(),
+        source: method,
+        status: 'pending'
+    };
+
+    user.transactions.push(tx);
+    await user.save();
+
+    // Генерация ссылки на оплату
+    let paymentUrl = '#';
+    switch(method) {
+        case 'metamask': paymentUrl =`/pay/metamask/${tx.amount}`; break;
+        case 'walletconnect': paymentUrl = `/pay/walletconnect/${tx.amount}`; break;
+        case 'koshelekru': paymentUrl = `/pay/koshelekru/${tx.amount}`; break;
+        case 'bybit': paymentUrl = `/pay/bybit/${tx.amount}`; break;
+    }
+
+    res.json({ success: true, paymentUrl });
+});
+
+// --- Симуляция оплаты ---
+app.get('/pay/:method/:amount', async (req, res) => {
+    const { method, amount } = req.params;
+    const user = await User.findById(req.session.userId);
+
+    const tx = user.transactions.reverse().find(t => t.amount === parseFloat(amount) && t.status === 'pending');
+    if (tx) {
+        tx.status = 'completed';
+        user.balance += parseFloat(amount);
+        await user.save();
+    }
+
+    res.send(`<h2>Пополнение через ${method} на ${amount}$ прошло успешно!</h2>
+              <a href="/">Вернуться на главную</a>`);
+});
+
 // --- История операций ---
 app.get('/history', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
@@ -141,7 +190,6 @@ app.get('/history', async (req, res) => {
     if (!currentUser) return res.redirect('/login');
 
     const transactions = currentUser.transactions || [];
-
     res.render('history', { currentUser, transactions });
 });
 
@@ -168,9 +216,7 @@ app.get('/admin', async (req, res) => {
 app.delete('/admin/users/:id', async (req, res) => {
     const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
     if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
-        return res.status(403).send('Доступ запрещён');
-
-    await User.findByIdAndDelete(req.params.id);
+        return res.status(403).send('Доступ запрещён');await User.findByIdAndDelete(req.params.id);
     res.redirect('/admin');
 });
 
