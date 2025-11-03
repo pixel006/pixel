@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <title>Личный кабинет</title>
     <link rel="stylesheet" href="/style.css">
+    
+    <!-- Мета-тег для мобильных -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
     <style>
         body {
             margin: 0;
@@ -15,19 +19,18 @@
 
         /* --- Шапка --- */
         header {
-            background: #f0f4f8; /* точно такой же цвет, как фон страницы */
+            background: #f0f4f8; /* сливается с фоном */
             color: #333;
             padding: 15px 20px;
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            box-shadow: none; /* убрали тень */
-            border-bottom: none; /* убрали возможную границу */
+            box-shadow: none;
+            border-bottom: none;
         }
 
-        /* Кнопка выхода */
         a.logout-btn {
-            background: #f0f4f8; /* сливается с фоном */
+            background: #f0f4f8;
             border: none;
             color: #333;
             text-decoration: none;
@@ -37,12 +40,13 @@
             transition: background 0.3s, color 0.3s;
         }
         a.logout-btn:hover {
-            background: #e0e0e0; /* легкий эффект при наведении */
+            background: #e0e0e0;
         }
 
         /* --- Контейнер --- */
         .container {
             max-width: 600px;
+            width: 90%; /* адаптивно под экран */
             margin: 40px auto;
             padding: 20px;
             background: #fff;
@@ -50,6 +54,7 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             text-align: center;
         }
+
         .balance {
             font-size: 1.3em;
             margin-bottom: 15px;
@@ -61,8 +66,10 @@
         }
         .btn {
             display: inline-block;
-            padding: 12px 25px;
-            margin: 10px;
+            width: 80%;       /* адаптивная ширина */
+            max-width: 250px; /* не растягивается сильно */
+            padding: 12px 0;
+            margin: 10px auto;
             background-color: #5c6bc0;
             color: white;
             text-decoration: none;
@@ -87,12 +94,15 @@
         }
         nav.fixed-footer a {
             display: inline-block;
-            padding: 12px 25px;
+            width: 90%;
+            max-width: 250px;
+            padding: 12px 0;
             background-color: #5c6bc0;
             color: white;
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
+            margin: auto;
             transition: background 0.3s;
         }
         nav.fixed-footer a:hover {
