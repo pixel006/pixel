@@ -112,23 +112,26 @@ app.get("/", async (req, res) => {
 
 app.get("/add", async (req, res) => {
     const deposits = await loadDeposits();
-    deposits.push({
+    const newDeposit = {
         id: Date.now(),
         principal: 1000,
         accrued: 0,
         rate: 0.04, // 4% в день
         status: "active",
         lastAccrual: new Date()
-    });
+    };
+    // Начисляем проценты сразу при создании
+    newDeposit.accrued += newDeposit.principal * newDeposit.rate;
+
+    deposits.push(newDeposit);
     await saveDeposits(deposits);
-    res.send("✅ Депозит добавлен!");
+    res.send("✅ Депозит добавлен с начисленными процентами!");
 });
 
 // =======================
 // --- MongoDB-депозиты и остальной функционал ---
-// =======================
-
-// Регистрацияapp.get('/register', (req, res) => res.render('register', { error: null }));
+// =======================// Регистрация
+app.get('/register', (req, res) => res.render('register', { error: null }));
 app.post('/register', async (req, res) => {
     try {
         const { name, email, age, password, referralCode } = req.body;
@@ -224,10 +227,9 @@ app.get('/', async (req, res) => {
 app.get('/group', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
-        if (req.session.userId === "admin") return res.redirect('/admin');
-
-        const currentUser = await User.findById(req.session.userId);
-        if (!currentUser) return res.redirect('/login');const team = await User.find({ referredBy: currentUser.referralCode });
+        if (req.session.userId === "admin") return res.redirect('/admin');const currentUser = await User.findById(req.session.userId);
+        if (!currentUser) return res.redirect('/login');
+        const team = await User.find({ referredBy: currentUser.referralCode });
         res.render('group', { currentUser, team, request: req });
     } catch (err) {
         console.error('Ошибка GET /group:', err);
@@ -248,9 +250,6 @@ app.get('/deposit', async (req, res) => {
     }
 });
 
-// =======================
-// --- POST /start-deposit с начислением первого процента сразу ---
-// =======================
 app.post('/start-deposit', async (req, res) => {
     try {
         if (!req.session.userId) return res.status(401).send('Не авторизован');
@@ -262,7 +261,7 @@ app.post('/start-deposit', async (req, res) => {
         const deposit = new Deposit({
             userId: req.session.userId,
             principal: numericAmount,
-            accrued: 0,
+            accrued: numericAmount * 0.04, // Начисляем проценты сразу
             status: 'active',
             lastInterestDate: new Date()
         });
@@ -270,21 +269,6 @@ app.post('/start-deposit', async (req, res) => {
 
         const user = await User.findById(req.session.userId);
         if (!user.transactions) user.transactions = [];
-
-        // Начисляем первый процент сразу (4%)
-        const firstInterest = numericAmount * 0.04;
-        deposit.accrued += firstInterest;
-        deposit.lastInterestDate = new Date();
-        await deposit.save();
-
-        user.transactions.push({
-            type: 'interest',
-            amount: firstInterest,
-            description: `Первый процент 4% начислен сразу`,
-            date: new Date(),
-            status: 'completed'
-        });
-
         user.transactions.push({
             type: 'deposit',
             amount: numericAmount,
@@ -293,7 +277,6 @@ app.post('/start-deposit', async (req, res) => {
             status: 'active'
         });
 
-        // Реферальное вознаграждение
         if (user.referredBy) {
             const referrer = await User.findOne({ referralCode: user.referredBy });
             if (referrer) {
@@ -313,7 +296,6 @@ app.post('/start-deposit', async (req, res) => {
 
         await user.save();
         res.redirect('/history');
-
     } catch (err) {
         console.error('Ошибка POST /start-deposit:', err);
         res.status(500).send('Ошибка сервера');
@@ -340,8 +322,8 @@ app.get('/history', async (req, res) => {
     }
 });
 
-// Остальной функционал: вывод средств, админ, logout остаётся без изменений// =======================
-// --- Запуск сервера ---
-// =======================
+// Остальной функционал: вывод средств, админ, logout остаётся без изменений
+
+// Запуск сервера
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT} 🚀`));
