@@ -5,13 +5,11 @@
     <title>История депозитов и начислений</title>
     <link rel="stylesheet" href="/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <style>
         body { font-family: Arial, sans-serif; background-color: #f0f4f8; margin: 0; padding-bottom: 80px; }
         .container { max-width: 700px; width: 90%; margin: 40px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         h1, h2 { text-align: center; color: #333; margin-bottom: 20px; }
-        ul { list-style: none; padding: 0; }
-        li { padding: 10px 0; border-bottom: 1px solid #ddd; }
+        .deposit-card { padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px; background:#f9f9f9; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
         th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; word-break: break-word; }
         th { background-color: #5c6bc0; color: white; }
@@ -23,25 +21,31 @@
     </style>
 </head>
 <body>
-
 <div class="container">
     <h1>История депозитов и начислений</h1>
 
-    <% if (!deposits || deposits.length === 0) { %>
-        <p class="no-transactions">Депозиты пока отсутствуют.</p>
+    <!-- Депозиты -->
+    <% if (deposits && deposits.length > 0) { %>
+        <% deposits.forEach(dep => { %>
+            <div class="deposit-card">
+                <strong>Депозит:</strong> <%= dep.principal.toFixed(2) %>$<br>
+                <strong>Статус:</strong> <%= dep.status === 'active' ? 'В работе' : 'Завершён' %><br>
+                <% if (dep.status === 'active') { %>
+                    <strong>Дней до завершения:</strong> <%= dep.daysLeft %> / 30<br>
+                    <strong>Начислено процентов:</strong> <%= dep.accrued.toFixed(2) %>$<br>
+                    <strong>Последнее начисление:</strong> <%= dep.lastInterestDate ? new Date(dep.lastInterestDate).toLocaleString() : '—' %>
+                <% } else { %>
+                    <strong>Депозит завершён после 30 дней</strong><br>
+                    <strong>Всего начислено:</strong> <%= dep.accrued.toFixed(2) %>$<br>
+                    <strong>Завершено:</strong> <%= dep.lastInterestDate ? new Date(dep.lastInterestDate).toLocaleString() : '—' %>
+                <% } %>
+            </div>
+        <% }) %>
     <% } else { %>
-        <ul>
-            <% deposits.forEach(dep => { %>
-                <li>
-                    💰 Сумма депозита: <%= dep.principal.toFixed(2) %>$ — 
-                    <%= dep.status === 'active' ? 'В работе' : 'Завершён' %><br>
-                    📈 Начислено процентов: <%= dep.accrued.toFixed(2) %>$<br>
-                    🕒 Последнее начисление: <%= dep.lastAccrual ? new Date(dep.lastAccrual).toLocaleString() : '—' %>
-                </li>
-            <% }) %>
-        </ul>
+        <p class="no-transactions">Депозиты пока отсутствуют.</p>
     <% } %>
 
+    <!-- Транзакции -->
     <h2>Транзакции</h2>
     <% if (!transactions || transactions.length === 0) { %>
         <p class="no-transactions">Операций пока нет.</p>
@@ -73,6 +77,5 @@
     <a href="/">Главная</a>
     <a href="/group">Моя группа</a>
 </nav>
-
 </body>
 </html>
