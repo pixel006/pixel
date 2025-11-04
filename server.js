@@ -41,33 +41,28 @@ async function accrueDailyInterest() {
       if (!user) continue;
 
       const now = new Date();
-      const depositStart = dep.createdAt || dep.lastInterestDate;
-      const diffTime = now - depositStart;
-      const daysPassed = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+      const daysPassed = dep.daysPassed || 0;
 
       if (daysPassed < 30) {
-        // Начисляем 4.5% на баланс пользователя
-        const interest = dep.principal * 0.045;
+        const interest = dep.principal * (dep.dailyPercent / 100); // ежедневный процент
         user.balance += interest;
 
         if (!user.transactions) user.transactions = [];
         user.transactions.push({
           type: 'interest',
           amount: interest,
-          description: `Начислено 4.5% от депозита ${dep.principal.toFixed(2)}$ (день ${daysPassed + 1}/30)`,
+          description: `Начислено ${dep.dailyPercent}% от депозита ${dep.principal.toFixed(2)}$ (день ${daysPassed + 1}/30)`,
           date: now,
           status: 'completed'
         });
 
-        // Обновляем депозит
         dep.accrued += interest;
+        dep.daysPassed += 1;
         dep.lastInterestDate = now;
-        dep.daysPassed = (dep.daysPassed || 0) + 1;
         await dep.save();
         await user.save();
-
       } else {
-        // Завершаем депозит
+        // Завершение депозита
         dep.status = 'completed';
         dep.lastInterestDate = now;
         await dep.save();
@@ -80,7 +75,6 @@ async function accrueDailyInterest() {
           date: now,
           status: 'completed'
         });
-
         await user.save();
       }
     }
@@ -118,8 +112,9 @@ app.post('/register', async (req, res) => {
     }
 
     const existingUser = await User.findOne({ email: normalizedEmail });
-    if (existingUser) return res.render('register', { error: 'Пользователь с таким email уже зарегистрирован' });const user = new User({
-      name,
+    if (existingUser) return res.render('register', { error: 'Пользователь с таким email уже зарегистрирован' });
+
+    const user = new User({name,
       email: normalizedEmail,
       age,
       password,
@@ -203,15 +198,20 @@ app.get('/deposit', async (req, res) => {
 app.post('/start-deposit', async (req, res) => {
   try {
     if (!req.session.userId) return res.status(401).send('Не авторизован');
-    const { amount } = req.body;
-    const numericAmount = parseFloat(amount);
-    if (!numericAmount || numericAmount <= 0) return res.status(400).send('Введите корректную сумму');
 
     const user = await User.findById(req.session.userId);
     if (!user) return res.status(404).send('Пользователь не найден');
+
+    // Проверяем, есть ли активный депозит
+    const activeDeposit = await Deposit.findOne({ userId: user._id, status: 'active' });
+    if (activeDeposit) return res.status(400).send('У вас уже есть активный депозит. Дождитесь завершения.');
+
+    const { amount } = req.body;
+    const numericAmount = parseFloat(amount);
+    if (!numericAmount || numericAmount <= 0) return res.status(400).send('Введите корректную сумму');
     if (user.balance < numericAmount) return res.status(400).send('Недостаточно средств');
 
-    // Списываем депозит
+    // Списываем сумму депозита
     user.balance -= numericAmount;
 
     // Создаём депозит
@@ -224,19 +224,16 @@ app.post('/start-deposit', async (req, res) => {
       daysPassed: 0,
       dailyPercent: 4.5
     });
-    await deposit.save();
-
-    // Начисляем первый процент сразу
-    const firstInterest = numericAmount * 0.045;
-    user.balance += firstInterest;
-
+    await deposit.save();// Добавляем запись о запуске депозита
     if (!user.transactions) user.transactions = [];
-    user.transactions.push({type: 'deposit',
+    user.transactions.push({
+      type: 'deposit',
       amount: numericAmount,
-      description: `Депозит запущен: списано ${numericAmount}$, начислено сразу ${firstInterest.toFixed(2)}$`,
+      description: `Депозит запущен: списано ${numericAmount}$`,
       date: new Date(),
       status: 'active'
     });
+
     await user.save();
     res.redirect('/history');
   } catch (err) {
@@ -342,10 +339,8 @@ app.get('/admin', async (req, res) => {
     console.error('Ошибка GET /admin:', err);
     res.status(500).send('Ошибка сервера');
   }
-});
-
-// =======================
-// --- Пополнение пользователя админом ---// =======================
+});// =======================
+// --- Пополнение пользователя админом ---//
 app.post('/admin/deposit/:id', async (req, res) => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
