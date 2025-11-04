@@ -42,7 +42,6 @@ async function accrueDailyInterest(userId) {
             dep.lastInterestDate = today;
             await dep.save();
 
-            // Обновляем историю пользователя
             const user = await User.findById(userId);
             user.transactions.push({
                 type: 'interest',
@@ -105,8 +104,9 @@ app.post('/register', async (req, res) => {
 // =======================
 // --- Логин ---
 // =======================
-app.get('/login', (req, res) => res.render('login', { error: null }));app.post('/login', async (req, res) => {
-    try {
+app.get('/login', (req, res) => res.render('login', { error: null }));
+
+app.post('/login', async (req, res) => {try {
         const { email, password } = req.body;
         if (!email) return res.render('login', { error: 'Email обязателен' });
         const normalizedEmail = email.toLowerCase();
@@ -166,7 +166,7 @@ app.get('/group', async (req, res) => {
 });
 
 // =======================
-// --- Запуск депозита ---
+// --- Депозит ---
 // =======================
 app.get('/deposit', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
@@ -180,11 +180,8 @@ app.post('/start-deposit', async (req, res) => {
 
     const { amount } = req.body;
     const numericAmount = parseFloat(amount);
-    if (!numericAmount || numericAmount <= 0) {
-        return res.status(400).send('Введите корректную сумму');
-    }
+    if (!numericAmount || numericAmount <= 0) return res.status(400).send('Введите корректную сумму');
 
-    // Создаём депозит
     const deposit = new Deposit({
         userId: req.session.userId,
         principal: numericAmount,
@@ -194,7 +191,6 @@ app.post('/start-deposit', async (req, res) => {
     });
     await deposit.save();
 
-    // Добавляем запись в историю пользователя
     const user = await User.findById(req.session.userId);
     user.transactions.push({
         type: 'deposit',
@@ -204,7 +200,6 @@ app.post('/start-deposit', async (req, res) => {
         status: 'active'
     });
 
-    // Реферальное вознаграждение 10%
     if (user.referredBy) {
         const referrer = await User.findOne({ referralCode: user.referredBy });
         if (referrer) {
@@ -213,7 +208,7 @@ app.post('/start-deposit', async (req, res) => {
             referrer.transactions.push({
                 type: 'referral',
                 amount: reward,
-                description: `Реферальное вознаграждение за депозит ${user.name}`,
+                description:` Реферальное вознаграждение за депозит ${user.name}`,
                 date: new Date(),
                 status: 'completed'
             });
@@ -266,7 +261,7 @@ app.post('/withdraw', async (req, res) => {
     }
 
     const now = new Date();
-    const day = now.getDay(); // 0 = воскресенье
+    const day = now.getDay();
     const hour = now.getHours();
     if (day !== 0 || hour < 8 || hour >= 20) {
         return res.render('withdraw', { currentUser: user, error: 'Вывод доступен только в воскресенье с 08:00 до 20:00' });
@@ -300,13 +295,11 @@ app.get('/logout', (req, res) => {
 });
 
 // =======================
-// --- Админ-панель ---
+// --- Админ-панель и пополнение ---
 // =======================
 app.get('/admin', async (req, res) => {
-    if (!req.session.userId) return res.redirect('/login');
-
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-    if (!adminEmail || req.session.userEmail.toLowerCase() !== adminEmail)
+    if (!req.session.userId || !req.session.userEmail || req.session.userEmail.toLowerCase() !== adminEmail)
         return res.status(403).send('Доступ запрещён');
 
     const users = await User.find();
@@ -315,19 +308,16 @@ app.get('/admin', async (req, res) => {
 
 app.delete('/admin/users/:id', async (req, res) => {
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-    if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
+    if (!req.session.userId || !req.session.userEmail || req.session.userEmail.toLowerCase() !== adminEmail)
         return res.status(403).send('Доступ запрещён');
 
     await User.findByIdAndDelete(req.params.id);
     res.redirect('/admin');
 });
 
-// =======================
-// --- Админ: виртуальное пополнение ---
-// =======================
 app.get('/admin/deposit/:id', async (req, res) => {
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-    if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
+    if (!req.session.userId || !req.session.userEmail || req.session.userEmail.toLowerCase() !== adminEmail)
         return res.status(403).send('Доступ запрещён');
 
     const user = await User.findById(req.params.id);
@@ -338,7 +328,7 @@ app.get('/admin/deposit/:id', async (req, res) => {
 
 app.post('/admin/deposit/:id', async (req, res) => {
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-    if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
+    if (!req.session.userId || !req.session.userEmail || req.session.userEmail.toLowerCase() !== adminEmail)
         return res.status(403).send('Доступ запрещён');const user = await User.findById(req.params.id);
     if (!user) return res.status(404).send('Пользователь не найден');
 
