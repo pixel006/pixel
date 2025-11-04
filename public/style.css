@@ -1,4 +1,42 @@
-/* Базовые настройки */
+/* ===========================
+   Флеш-сообщения (всплывающие)
+   =========================== */
+.flash-message {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #ff4d4f; /* красное для ошибки */
+  color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  display: flex;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease forwards;
+}
+
+.flash-message.hidden {
+  display: none;
+}
+
+.flash-message button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 18px;
+  margin-left: 15px;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+
+/* ===========================
+   Базовые настройки
+   =========================== */
 body {
     font-family: 'Arial', sans-serif;
     background-color: #f4f4f9;
@@ -87,12 +125,13 @@ form {
     margin-bottom: 20px;
 }
 
-input {
+input, select {
     padding: 10px;
     margin: 8px 0;
     border-radius: 5px;
     border: 1px solid #ccc;
     font-size: 16px;
+    box-sizing: border-box;
 }
 
 /* Основные кнопки */

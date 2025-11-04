@@ -35,16 +35,13 @@ mongoose.connect(process.env.MONGO_URI)
 async function accrueDailyInterest() {
   try {
     const deposits = await Deposit.find({ status: 'active' });
-
     for (const dep of deposits) {
       const user = await User.findById(dep.userId);
       if (!user) continue;
 
-      const now = new Date();
       const daysPassed = dep.daysPassed || 0;
-
       if (daysPassed < 30) {
-        const interest = dep.principal * (dep.dailyPercent / 100); // ежедневный процент
+        const interest = dep.principal * (dep.dailyPercent / 100);
         user.balance += interest;
 
         if (!user.transactions) user.transactions = [];
@@ -52,19 +49,18 @@ async function accrueDailyInterest() {
           type: 'interest',
           amount: interest,
           description: `Начислено ${dep.dailyPercent}% от депозита ${dep.principal.toFixed(2)}$ (день ${daysPassed + 1}/30)`,
-          date: now,
+          date: new Date(),
           status: 'completed'
         });
 
         dep.accrued += interest;
         dep.daysPassed += 1;
-        dep.lastInterestDate = now;
+        dep.lastInterestDate = new Date();
         await dep.save();
         await user.save();
       } else {
-        // Завершение депозита
         dep.status = 'completed';
-        dep.lastInterestDate = now;
+        dep.lastInterestDate = new Date();
         await dep.save();
 
         if (!user.transactions) user.transactions = [];
@@ -72,13 +68,12 @@ async function accrueDailyInterest() {
           type: 'deposit_completed',
           amount: dep.principal,
           description: `Депозит ${dep.principal.toFixed(2)}$ завершён после 30 дней`,
-          date: now,
+          date: new Date(),
           status: 'completed'
         });
         await user.save();
       }
     }
-
     console.log('Начисление процентов завершено');
   } catch (err) {
     console.error('Ошибка начисления процентов:', err);
@@ -114,7 +109,8 @@ app.post('/register', async (req, res) => {
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) return res.render('register', { error: 'Пользователь с таким email уже зарегистрирован' });
 
-    const user = new User({name,
+    const user = new User({
+      name,
       email: normalizedEmail,
       age,
       password,
@@ -123,9 +119,7 @@ app.post('/register', async (req, res) => {
       transactions: [],
       referralCode: Math.random().toString(36).substring(2, 8).toUpperCase()
     });
-    await user.save();
-
-    req.session.userId = user._id;
+    await user.save();req.session.userId = user._id;
     req.session.userName = user.name;
     req.session.userEmail = user.email;
     if (normalizedEmail === adminEmail) return res.redirect('/admin');
@@ -202,19 +196,19 @@ app.post('/start-deposit', async (req, res) => {
     const user = await User.findById(req.session.userId);
     if (!user) return res.status(404).send('Пользователь не найден');
 
-    // Проверяем, есть ли активный депозит
+    // Проверяем активный депозит
     const activeDeposit = await Deposit.findOne({ userId: user._id, status: 'active' });
-    if (activeDeposit) return res.status(400).send('У вас уже есть активный депозит. Дождитесь завершения.');
+    if (activeDeposit) {
+      return res.render('deposit', { currentUser: user, error: 'У вас уже есть активный депозит. Дождитесь завершения.' });
+    }
 
     const { amount } = req.body;
     const numericAmount = parseFloat(amount);
     if (!numericAmount || numericAmount <= 0) return res.status(400).send('Введите корректную сумму');
     if (user.balance < numericAmount) return res.status(400).send('Недостаточно средств');
 
-    // Списываем сумму депозита
     user.balance -= numericAmount;
 
-    // Создаём депозит
     const deposit = new Deposit({
       userId: user._id,
       principal: numericAmount,
@@ -224,7 +218,8 @@ app.post('/start-deposit', async (req, res) => {
       daysPassed: 0,
       dailyPercent: 4.5
     });
-    await deposit.save();// Добавляем запись о запуске депозита
+    await deposit.save();
+
     if (!user.transactions) user.transactions = [];
     user.transactions.push({
       type: 'deposit',
@@ -240,9 +235,7 @@ app.post('/start-deposit', async (req, res) => {
     console.error('Ошибка POST /start-deposit:', err);
     res.status(500).send('Ошибка сервера');
   }
-});
-
-// =======================
+});// =======================
 // --- История операций ---
 // =======================
 app.get('/history', async (req, res) => {
@@ -291,7 +284,9 @@ app.post('/withdraw', async (req, res) => {
     const now = new Date();
     const day = now.getDay();
     const hour = now.getHours();
-    if (day !== 0 || hour < 8 || hour >= 20) return res.render('withdraw', { currentUser: user, error: 'Вывод доступен только в воскресенье с 08:00 до 20:00' });
+    if (day !== 0 || hour < 8 || hour >= 20) {
+      return res.render('withdraw', { currentUser: user, error: 'Вывод доступен только в воскресенье с 08:00 до 20:00' });
+    }
 
     const fee = numericAmount * 0.02;
     const totalDeduction = numericAmount + fee;
@@ -339,7 +334,9 @@ app.get('/admin', async (req, res) => {
     console.error('Ошибка GET /admin:', err);
     res.status(500).send('Ошибка сервера');
   }
-});// =======================
+});
+
+// =======================
 // --- Пополнение пользователя админом ---//
 app.post('/admin/deposit/:id', async (req, res) => {
   try {
@@ -350,9 +347,7 @@ app.post('/admin/deposit/:id', async (req, res) => {
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).send('Пользователь не найден');
     const amount = parseFloat(req.body.amount);
-    if (!amount || amount <= 0) return res.status(400).send('Введите корректную сумму');
-
-    if (!user.transactions) user.transactions = [];
+    if (!amount || amount <= 0) return res.status(400).send('Введите корректную сумму');if (!user.transactions) user.transactions = [];
     user.balance += amount;
     user.transactions.push({
       type: 'deposit',

@@ -46,10 +46,6 @@
     button:hover {
         background-color: #3f4fa3;
     }
-    .error {
-        color: red;
-        text-align: center;
-    }
     nav.fixed-footer {
         position: fixed;
         bottom: 0;
@@ -73,15 +69,44 @@
     nav.fixed-footer a:hover {
         background-color: #3f4fa3;
     }
+    /* Стили для всплывающего сообщения */
+    .flash-message {
+        position: fixed;
+        top: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        background-color: #f44336;
+        color: white;
+        padding: 15px 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        min-width: 300px;
+        z-index: 9999;
+    }
+    .flash-message.hidden {
+        display: none;
+    }
+    .flash-message button {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+    }
 </style>
 </head>
 <body>
 <div class="container">
     <h1>Пополнить баланс</h1>
 
-    <% if (typeof error !== 'undefined' && error) { %>
-        <p class="error"><%= error %></p>
-    <% } %>
+    <!-- Блок для всплывающих сообщений -->
+    <div id="flash-message" class="flash-message hidden">
+        <span id="flash-text"></span>
+        <button id="flash-close">&times;</button>
+    </div>
 
     <% if (currentUser) { %>
         <p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>
@@ -104,15 +129,25 @@
 </div>
 
 <script>
+const flashMessage = document.getElementById('flash-message');
+const flashText = document.getElementById('flash-text');
+const flashClose = document.getElementById('flash-close');
+
+function showFlashMessage(message) {
+    flashText.textContent = message;
+    flashMessage.classList.remove('hidden');
+}flashClose.addEventListener('click', () => {
+    flashMessage.classList.add('hidden');
+});
+
 document.getElementById('depositBtn').addEventListener('click', async () => {
     const amount = parseFloat(document.getElementById('amount').value);
     const method = document.getElementById('method').value;
 
     if (!amount || amount <= 0) {
-        return alert('Введите корректную сумму');
+        return showFlashMessage('Введите корректную сумму');
     }
 
-    // Адреса для криптокошельков
     const walletAddresses = {
         koshelekru: '0xKoshelekRUExampleAddress123',
         bybit: '0xBybitExampleAddress456'
@@ -125,22 +160,21 @@ document.getElementById('depositBtn').addEventListener('click', async () => {
         return;
     }
 
-    // Для остальных методов (Metamask/WalletConnect)
     try {
         const res = await fetch('/deposit', {
             method: 'POST',
             headers: {'Content-Type':'application/json'},
             body: JSON.stringify({ amount, method })
         });
-
-        const data = await res.json();if (data.success && data.paymentUrl) {
+        const data = await res.json();
+        if (data.success && data.paymentUrl) {
             window.location.href = data.paymentUrl;
         } else {
-            alert(data.message || 'Произошла ошибка, попробуйте снова');
+            showFlashMessage(data.message || 'Произошла ошибка, попробуйте снова');
         }
     } catch (err) {
         console.error(err);
-        alert('Ошибка сервера');
+        showFlashMessage('Ошибка сервера');
     }
 });
 
@@ -150,7 +184,7 @@ document.getElementById('copyAddressBtn').addEventListener('click', () => {
     addressInput.select();
     addressInput.setSelectionRange(0, 99999);
     navigator.clipboard.writeText(addressInput.value).then(() => {
-        alert('Адрес скопирован!');
+        showFlashMessage('Адрес скопирован!');
     });
 });
 </script>
