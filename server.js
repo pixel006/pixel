@@ -37,7 +37,7 @@ async function accrueDailyInterest(userId) {
     for (let dep of deposits) {
         const days = Math.floor((today - dep.lastInterestDate) / (1000*60*60*24));
         if (days > 0) {
-            const interest = dep.principal * 0.035 * days; // 3.5% в день
+            const interest = dep.principal * 0.05 * days; // 5% в день
             dep.accrued += interest;
             dep.lastInterestDate = today;
             await dep.save();
@@ -86,7 +86,8 @@ app.post('/register', async (req, res) => {
             password,
             referredBy: normalizedEmail === adminEmail ? "000001" : referralCode,
             balance: 0,
-            transactions: []
+            transactions: [],
+            referralCode: Math.random().toString(36).substring(2, 8).toUpperCase()
         });
         await user.save();
 
@@ -104,11 +105,10 @@ app.post('/register', async (req, res) => {
 // =======================
 // --- Логин ---
 // =======================
-app.get('/login', (req, res) => res.render('login', { error: null }));
-
-app.post('/login', async (req, res) => {
+app.get('/login', (req, res) => res.render('login', { error: null }));app.post('/login', async (req, res) => {
     try {
-        const { email, password } = req.body;if (!email) return res.render('login', { error: 'Email обязателен' });
+        const { email, password } = req.body;
+        if (!email) return res.render('login', { error: 'Email обязателен' });
         const normalizedEmail = email.toLowerCase();
         const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
         const adminPassword = process.env.ADMIN_PASSWORD || null;
@@ -180,7 +180,6 @@ app.post('/start-deposit', async (req, res) => {
 
     const { amount } = req.body;
     const numericAmount = parseFloat(amount);
-
     if (!numericAmount || numericAmount <= 0) {
         return res.status(400).send('Введите корректную сумму');
     }
@@ -204,12 +203,27 @@ app.post('/start-deposit', async (req, res) => {
         date: new Date(),
         status: 'active'
     });
+
+    // Реферальное вознаграждение 10%
+    if (user.referredBy) {
+        const referrer = await User.findOne({ referralCode: user.referredBy });
+        if (referrer) {
+            const reward = numericAmount * 0.10;
+            referrer.balance += reward;
+            referrer.transactions.push({
+                type: 'referral',
+                amount: reward,
+                description: `Реферальное вознаграждение за депозит ${user.name}`,
+                date: new Date(),
+                status: 'completed'
+            });
+            await referrer.save();
+        }
+    }
+
     await user.save();
-
     res.redirect('/history');
-});
-
-// =======================
+});// =======================
 // --- История операций ---
 // =======================
 app.get('/history', async (req, res) => {
@@ -220,12 +234,13 @@ app.get('/history', async (req, res) => {
     if (!currentUser) return res.redirect('/login');
 
     await accrueDailyInterest(req.session.userId);
-
     const deposits = await Deposit.find({ userId: currentUser._id });
     const transactions = currentUser.transactions || [];
 
     res.render('history', { currentUser, deposits, transactions });
-});// =======================
+});
+
+// =======================
 // --- Вывод средств ---
 // =======================
 app.get('/withdraw', async (req, res) => {
@@ -241,14 +256,20 @@ app.post('/withdraw', async (req, res) => {
 
     const user = await User.findById(req.session.userId);
     const { amount, cryptoAddress } = req.body;
-
     const numericAmount = parseFloat(amount);
+
     if (!numericAmount || numericAmount <= 0) {
         return res.render('withdraw', { currentUser: user, error: 'Введите корректную сумму' });
     }
-
     if (numericAmount > user.balance) {
         return res.render('withdraw', { currentUser: user, error: 'Сумма превышает баланс аккаунта' });
+    }
+
+    const now = new Date();
+    const day = now.getDay(); // 0 = воскресенье
+    const hour = now.getHours();
+    if (day !== 0 || hour < 8 || hour >= 20) {
+        return res.render('withdraw', { currentUser: user, error: 'Вывод доступен только в воскресенье с 08:00 до 20:00' });
     }
 
     const fee = numericAmount * 0.02;
@@ -284,7 +305,7 @@ app.get('/logout', (req, res) => {
 app.get('/admin', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
 
-    const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
     if (!adminEmail || req.session.userEmail.toLowerCase() !== adminEmail)
         return res.status(403).send('Доступ запрещён');
 
@@ -293,11 +314,47 @@ app.get('/admin', async (req, res) => {
 });
 
 app.delete('/admin/users/:id', async (req, res) => {
-    const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
     if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
         return res.status(403).send('Доступ запрещён');
 
     await User.findByIdAndDelete(req.params.id);
+    res.redirect('/admin');
+});
+
+// =======================
+// --- Админ: виртуальное пополнение ---
+// =======================
+app.get('/admin/deposit/:id', async (req, res) => {
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+    if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
+        return res.status(403).send('Доступ запрещён');
+
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).send('Пользователь не найден');
+
+    res.render('admin-deposit', { user, error: null });
+});
+
+app.post('/admin/deposit/:id', async (req, res) => {
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+    if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
+        return res.status(403).send('Доступ запрещён');const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).send('Пользователь не найден');
+
+    const amount = parseFloat(req.body.amount);
+    if (!amount || amount <= 0) return res.render('admin-deposit', { user, error: 'Введите корректную сумму' });
+
+    user.balance += amount;
+    user.transactions.push({
+        type: 'deposit',
+        amount,
+        description: 'Пополнение администратором',
+        date: new Date(),
+        status: 'completed'
+    });
+
+    await user.save();
     res.redirect('/admin');
 });
 
