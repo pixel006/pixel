@@ -204,8 +204,8 @@ app.post('/start-deposit', async (req, res) => {
 
     const { amount } = req.body;
     const numericAmount = parseFloat(amount);
-    if (!numericAmount || numericAmount <= 0) return res.status(400).send('Введите корректную сумму');
-    if (user.balance < numericAmount) return res.status(400).send('Недостаточно средств');
+    if (!numericAmount || numericAmount <= 0) return res.render('deposit', { currentUser: user, error: 'Введите корректную сумму' });
+    if (user.balance < numericAmount) return res.render('deposit', { currentUser: user, error: 'Недостаточно средств' });
 
     user.balance -= numericAmount;
 
@@ -239,24 +239,17 @@ app.post('/start-deposit', async (req, res) => {
 // --- История операций ---
 // =======================
 app.get('/history', async (req, res) => {
-  try {
-    if (!req.session.userId) return res.redirect('/login');
-    if (req.session.userId === "admin") return res.redirect('/admin');
+  if (!req.session.userId) return res.redirect('/login');
+  const currentUser = await User.findById(req.session.userId);
+  if (!currentUser) return res.redirect('/login');
 
-    const currentUser = await User.findById(req.session.userId);
-    if (!currentUser) return res.redirect('/login');
+  const deposits = await Deposit.find({ userId: currentUser._id }).sort({ createdAt: -1 });
+  deposits.forEach(dep => dep.daysLeft = dep.status === 'active' ? 30 - (dep.daysPassed || 0) : 0);
 
-    const deposits = await Deposit.find({ userId: currentUser._id }).sort({ createdAt: -1 });
-    deposits.forEach(dep => dep.daysLeft = dep.status === 'active' ? 30 - (dep.daysPassed || 0) : 0);
+  const transactions = currentUser.transactions || [];
+  transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    const transactions = currentUser.transactions || [];
-    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-
-    res.render('history', { currentUser, deposits, transactions });
-  } catch (err) {
-    console.error('Ошибка GET /history:', err);
-    res.status(500).send('Ошибка сервера');
-  }
+  res.render('history', { currentUser, deposits, transactions });
 });
 
 // =======================
@@ -264,8 +257,6 @@ app.get('/history', async (req, res) => {
 // =======================
 app.get('/withdraw', async (req, res) => {
   if (!req.session.userId) return res.redirect('/login');
-  if (req.session.userId === "admin") return res.redirect('/admin');
-
   const user = await User.findById(req.session.userId);
   res.render('withdraw', { currentUser: user, error: null });
 });
@@ -313,6 +304,20 @@ app.post('/withdraw', async (req, res) => {
 });
 
 // =======================
+// --- Моя группа ---
+// =======================
+app.get('/group', async (req, res) => {
+  if (!req.session.userId) return res.redirect('/login');
+  if (req.session.userId === "admin") return res.redirect('/admin');
+
+  const user = await User.findById(req.session.userId);
+  if (!user) return res.redirect('/login');
+
+  const team = await User.find({ referredBy: user.referralCode });
+  res.render('group', { currentUser: user, team });
+});
+
+// =======================
 // --- Выход ---
 // =======================
 app.get('/logout', (req, res) => {
@@ -336,8 +341,6 @@ app.get('/admin', async (req, res) => {
   }
 });
 
-// =======================
-// --- Пополнение пользователя админом ---//
 app.post('/admin/deposit/:id', async (req, res) => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
@@ -346,6 +349,7 @@ app.post('/admin/deposit/:id', async (req, res) => {
 
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).send('Пользователь не найден');
+
     const amount = parseFloat(req.body.amount);
     if (!amount || amount <= 0) return res.status(400).send('Введите корректную сумму');if (!user.transactions) user.transactions = [];
     user.balance += amount;
