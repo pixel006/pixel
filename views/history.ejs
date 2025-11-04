@@ -36,7 +36,7 @@
                     💰 Сумма депозита: <%= dep.principal.toFixed(2) %>$ — 
                     <%= dep.status === 'active' ? 'В работе' : 'Завершён' %><br>
                     📈 Начислено процентов: <%= dep.accrued.toFixed(2) %>$<br>
-                    🕒 Последнее начисление: <%= new Date(dep.lastAccrual).toLocaleString() %>
+                    🕒 Последнее начисление: <%= new Date(dep.lastAccrual || dep.lastInterestDate).toLocaleString('ru-RU') %>
                 </li>
             <% }) %>
         </ul>
@@ -51,8 +51,9 @@
                 <tr>
                     <th>Тип</th>
                     <th>Сумма ($)</th>
-                    <th>Дата</th>
+                    <th>Дата и время</th>
                     <th>Описание</th>
+                    <th>Статус</th>
                 </tr>
             </thead>
             <tbody>
@@ -60,8 +61,9 @@
                     <tr>
                         <td><%= tx.type %></td>
                         <td><%= tx.amount.toFixed(2) %></td>
-                        <td><%= new Date(tx.date).toLocaleString() %></td>
+                        <td><%= new Date(tx.date).toLocaleString('ru-RU') %></td>
                         <td><%= tx.description %></td>
+                        <td><%= tx.status %></td>
                     </tr>
                 <% }) %>
             </tbody>
