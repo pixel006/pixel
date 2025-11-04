@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Редактор страницы</title>
+
+<!-- GrapesJS стили -->
+<link href="https://unpkg.com/grapesjs/dist/css/grapes.min.css" rel="stylesheet"/>
+
+<style>
+  body, html { height: 100%; margin: 0; }
+  #gjs { height: 100%; }
+  .panel-btn { margin: 5px; padding: 5px 10px; background: #5c6bc0; color: #fff; border: none; cursor: pointer; border-radius: 5px; }
+</style>
+</head>
+<body>
+
+<div id="gjs">
+  <!-- Начальное содержимое -->
+  <div class="container">
+    <h1>Пополнить баланс</h1>
+    <p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>
+    <input type="number" placeholder="Сумма" step="0.01" min="0">
+    <button>Пополнить</button>
+  </div>
+</div>
+
+<!-- GrapesJS скрипт -->
+<script src="https://unpkg.com/grapesjs"></script>
+<script>
+  const editor = grapesjs.init({
+    container: '#gjs',
+    fromElement: true,  // взять HTML из контейнера
+    height: '100%',
+    width: 'auto',
+    storageManager: {
+      type: 'local',  // сохраняем изменения локально в браузере
+      autosave: true,
+      autoload: true,
+    },
+    panels: { defaults: [] } // убираем стандартные панели
+  });
+
+  // Кнопка для вывода HTML/CSS
+  const saveBtn = document.createElement('button');
+  saveBtn.textContent = 'Сохранить HTML';
+  saveBtn.className = 'panel-btn';
+  saveBtn.onclick = () => {
+    const html = editor.getHtml();
+    const css = editor.getCss();
+    console.log('HTML:\n', html);
+    console.log('CSS:\n', css);
+    alert('HTML и CSS выведены в консоль, их можно вставить в deposit.ejs');
+  };
+  document.body.appendChild(saveBtn);
+</script>
+
+</body>
+</html>

@@ -122,6 +122,7 @@ app.post('/register', async (req, res) => {
     await user.save();req.session.userId = user._id;
     req.session.userName = user.name;
     req.session.userEmail = user.email;
+
     if (normalizedEmail === adminEmail) return res.redirect('/admin');
     res.redirect('/');
   } catch (err) {
@@ -196,7 +197,6 @@ app.post('/start-deposit', async (req, res) => {
     const user = await User.findById(req.session.userId);
     if (!user) return res.status(404).send('Пользователь не найден');
 
-    // Проверяем активный депозит
     const activeDeposit = await Deposit.findOne({ userId: user._id, status: 'active' });
     if (activeDeposit) {
       return res.render('deposit', { currentUser: user, error: 'У вас уже есть активный депозит. Дождитесь завершения.' });
@@ -228,7 +228,6 @@ app.post('/start-deposit', async (req, res) => {
       date: new Date(),
       status: 'active'
     });
-
     await user.save();
     res.redirect('/history');
   } catch (err) {
@@ -318,6 +317,18 @@ app.get('/group', async (req, res) => {
 });
 
 // =======================
+// --- GrapesJS редактор ---
+// =======================
+app.get('/grapes', async (req, res) => {
+  if (!req.session.userId) return res.redirect('/login');
+
+  const user = await User.findById(req.session.userId);
+  if (!user) return res.redirect('/login');
+
+  res.render('grapes', { currentUser: user });
+});
+
+// =======================
 // --- Выход ---
 // =======================
 app.get('/logout', (req, res) => {
@@ -339,9 +350,7 @@ app.get('/admin', async (req, res) => {
     console.error('Ошибка GET /admin:', err);
     res.status(500).send('Ошибка сервера');
   }
-});
-
-app.post('/admin/deposit/:id', async (req, res) => {
+});app.post('/admin/deposit/:id', async (req, res) => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
     if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
@@ -351,7 +360,9 @@ app.post('/admin/deposit/:id', async (req, res) => {
     if (!user) return res.status(404).send('Пользователь не найден');
 
     const amount = parseFloat(req.body.amount);
-    if (!amount || amount <= 0) return res.status(400).send('Введите корректную сумму');if (!user.transactions) user.transactions = [];
+    if (!amount || amount <= 0) return res.status(400).send('Введите корректную сумму');
+
+    if (!user.transactions) user.transactions = [];
     user.balance += amount;
     user.transactions.push({
       type: 'deposit',
