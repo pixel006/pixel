@@ -9,7 +9,7 @@
     <style>
         body { font-family: Arial, sans-serif; background-color: #f0f4f8; margin: 0; padding-bottom: 80px; }
         .container { max-width: 700px; width: 90%; margin: 40px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1 { text-align: center; color: #333; margin-bottom: 20px; }
+        h1, h2 { text-align: center; color: #333; margin-bottom: 20px; }
         ul { list-style: none; padding: 0; }
         li { padding: 10px 0; border-bottom: 1px solid #ddd; }
         table { width: 100%; border-collapse: collapse; margin-top: 15px; }
@@ -33,8 +33,10 @@
         <ul>
             <% deposits.forEach(dep => { %>
                 <li>
-                    Депозит: <%= dep.principal.toFixed(2) %>$ — <%= dep.status === 'active' ? 'В работе' : 'Завершён' %><br>
-                    Начислено процентов: <%= dep.accrued.toFixed(2) %>$
+                    💰 Сумма депозита: <%= dep.principal.toFixed(2) %>$ — 
+                    <%= dep.status === 'active' ? 'В работе' : 'Завершён' %><br>
+                    📈 Начислено процентов: <%= dep.accrued.toFixed(2) %>$<br>
+                    🕒 Последнее начисление: <%= new Date(dep.lastAccrual).toLocaleString() %>
                 </li>
             <% }) %>
         </ul>
