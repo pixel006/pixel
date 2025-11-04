@@ -44,6 +44,7 @@ async function accrueDailyInterest(userId) {
                 await dep.save();
 
                 const user = await User.findById(userId);
+                if (!user.transactions) user.transactions = [];
                 user.transactions.push({
                     type: 'interest',
                     amount: interest,
@@ -212,6 +213,7 @@ app.post('/start-deposit', async (req, res) => {
         await deposit.save();
 
         const user = await User.findById(req.session.userId);
+        if (!user.transactions) user.transactions = [];
         user.transactions.push({
             type: 'deposit',
             amount: numericAmount,
@@ -221,6 +223,7 @@ app.post('/start-deposit', async (req, res) => {
         });if (user.referredBy) {
             const referrer = await User.findOne({ referralCode: user.referredBy });
             if (referrer) {
+                if (!referrer.transactions) referrer.transactions = [];
                 const reward = numericAmount * 0.10;
                 referrer.balance += reward;
                 referrer.transactions.push({
@@ -315,6 +318,7 @@ app.post('/withdraw', async (req, res) => {
             status: 'pending'
         };
 
+        if (!user.transactions) user.transactions = [];
         user.transactions.push(tx);
         user.balance -= totalDeduction;
         await user.save();
@@ -390,6 +394,7 @@ app.post('/admin/deposit/:id', async (req, res) => {
         const amount = parseFloat(req.body.amount);
         if (!amount || amount <= 0) return res.render('admin-deposit', { user, error: 'Введите корректную сумму' });
 
+        if (!user.transactions) user.transactions = [];
         console.log(`Пополнение пользователя ${user.email} на сумму ${amount}`);
         user.balance += amount;
         user.transactions.push({
