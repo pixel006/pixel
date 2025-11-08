@@ -70,11 +70,11 @@ saveBtn.onclick = async () => {
 };
 document.body.appendChild(saveBtn);
 
-// Добавление пользовательских блоков
+// Пример динамического блока
 editor.BlockManager.add('balance', {
   label: 'Баланс пользователя',
   category: 'Динамика',
-  content: `<p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>`,
+  content: '<p>Баланс: $0.00</p>',
 });
 
 </script>
