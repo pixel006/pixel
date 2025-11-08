@@ -49,7 +49,7 @@ const editor = grapesjs.init({
   }
 });
 
-// Кнопка сохранения страницы в базу
+// Кнопка сохранения страницы
 const saveBtn = document.createElement('button');
 saveBtn.textContent = 'Сохранить страницу';
 saveBtn.className = 'save-btn';
@@ -58,7 +58,7 @@ saveBtn.onclick = async () => {
   const css = editor.getCss();
   const js = editor.getJs();
 
-  const res = await fetch(`/grapes/<%= page.name %>/save`, {
+  const res = await fetch('/grapes/<%= page.name %>/save', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ html, css, js })
@@ -73,7 +73,14 @@ document.body.appendChild(saveBtn);
 editor.BlockManager.add('balance', {
   label: 'Баланс пользователя',
   category: 'Динамика',
-  content: `<p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>`,
+  content: `<p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>`
+});
+
+// Можно добавить другие динамические блоки или свои HTML элементы
+editor.BlockManager.add('button', {
+  label: 'Кнопка',
+  category: 'Элементы',
+  content: '<button>Новая кнопка</button>'
 });
 </script>
 </body>
