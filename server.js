@@ -7,6 +7,7 @@ const cron = require('node-cron');
 
 const User = require('./models/User');
 const Deposit = require('./models/Deposit');
+const Page = require('./models/Page'); // <-- новая модель страницы
 
 const app = express();
 
@@ -109,8 +110,7 @@ app.post('/register', async (req, res) => {
     const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) return res.render('register', { error: 'Пользователь с таким email уже зарегистрирован' });
 
-    const user = new User({
-      name,
+    const user = new User({name,
       email: normalizedEmail,
       age,
       password,
@@ -119,7 +119,8 @@ app.post('/register', async (req, res) => {
       transactions: [],
       referralCode: Math.random().toString(36).substring(2, 8).toUpperCase()
     });
-    await user.save();req.session.userId = user._id;
+    await user.save();
+    req.session.userId = user._id;
     req.session.userName = user.name;
     req.session.userEmail = user.email;
 
@@ -216,10 +217,8 @@ app.post('/start-deposit', async (req, res) => {
       status: 'active',
       lastInterestDate: new Date(),
       daysPassed: 0,
-      dailyPercent: 4.5
-    });
+      dailyPercent: 4.5});
     await deposit.save();
-
     if (!user.transactions) user.transactions = [];
     user.transactions.push({
       type: 'deposit',
@@ -234,7 +233,9 @@ app.post('/start-deposit', async (req, res) => {
     console.error('Ошибка POST /start-deposit:', err);
     res.status(500).send('Ошибка сервера');
   }
-});// =======================
+});
+
+// =======================
 // --- История операций ---
 // =======================
 app.get('/history', async (req, res) => {
@@ -319,13 +320,48 @@ app.get('/group', async (req, res) => {
 // =======================
 // --- GrapesJS редактор ---
 // =======================
-app.get('/grapes', async (req, res) => {
+app.get('/grapes/:pageName', async (req, res) => {
   if (!req.session.userId) return res.redirect('/login');
 
-  const user = await User.findById(req.session.userId);
-  if (!user) return res.redirect('/login');
+  const pageName = req.params.pageName;
 
-  res.render('grapes', { currentUser: user });
+  // ищем страницу или создаем пустую
+  let page = await Page.findOne({ name: pageName });
+  if (!page) {
+    page = new Page({ name: pageName });
+    await page.save();
+  }
+
+  res.render('grapes', { page });
+});
+
+app.post('/grapes/:pageName/save', async (req, res) => {
+  if (!req.session.userId) return res.status(401).send('Не авторизован');
+
+  const { html, css, js } = req.body;
+  const pageName = req.params.pageName;let page = await Page.findOne({ name: pageName });
+  if (!page) page = new Page({ name: pageName, html, css, js });
+  else {
+    page.html = html;
+    page.css = css;
+    page.js = js;
+  }
+
+  await page.save();
+  res.json({ success: true, message: 'Страница сохранена!' });
+});
+
+// Отображение страницы сайта
+app.get('/page/:pageName', async (req, res) => {
+  const pageName = req.params.pageName;
+  const page = await Page.findOne({ name: pageName });
+  if (!page) return res.status(404).send('Страница не найдена');
+
+  res.send(`
+    <style>${page.css}</style>
+    ${page.html}
+    <script>${page.js}</script>`
+  );
 });
 
 // =======================
@@ -350,7 +386,9 @@ app.get('/admin', async (req, res) => {
     console.error('Ошибка GET /admin:', err);
     res.status(500).send('Ошибка сервера');
   }
-});app.post('/admin/deposit/:id', async (req, res) => {
+});
+
+app.post('/admin/deposit/:id', async (req, res) => {
   try {
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
     if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail)
