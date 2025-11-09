@@ -7,11 +7,8 @@
 <link rel="stylesheet" href="/style.css">
 <style>
     body { font-family: Arial; background-color: #f0f4f8; margin: 0; padding-bottom: 60px; }
-    .container { max-width: 480px; margin: 40px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    h1 { text-align: center; color: #333; margin-bottom: 20px; font-size: 22px; }
-    input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; font-size: 16px; box-sizing: border-box; }
-    button { background-color: #5c6bc0; color: white; border: none; cursor: pointer; }
-    button:hover { background-color: #3f4fa3; }
+    .container { max-width: 480px; margin: 40px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; }
+    h1 { color: #333; margin-bottom: 20px; font-size: 22px; }
 
     nav.fixed-footer {
         position: fixed;
@@ -38,69 +35,22 @@
     }
 
     nav.fixed-footer a:hover { background:#3f4fa3; }
-
-    .flash-message { position: fixed; top:20px; left:50%; transform: translateX(-50%); background:red; color:white; padding:15px 20px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; min-width:300px; z-index:9999; }
-    .flash-message.hidden { display:none; }
-    .flash-message button { background:none; border:none; color:white; font-size:18px; cursor:pointer; }
 </style>
 </head>
 <body>
 <div class="container">
-    <h1>Запустить депозит</h1>
-
-    <!-- Блок для сообщений -->
-    <div id="flash-message" class="flash-message hidden">
-        <span id="flash-text"></span>
-        <button id="flash-close">&times;</button>
-    </div>
-
+    <h1>Депозит</h1>
     <% if (currentUser) { %>
         <p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>
-        <input type="number" id="amount" placeholder="Сумма депозита" step="0.01" min="0">
-        <button id="depositBtn">Запустить депозит</button>
+        <p>Нажмите кнопку START внизу для запуска депозита.</p>
     <% } %>
 </div>
 
-<script>
-const flashMessage = document.getElementById('flash-message');
-const flashText = document.getElementById('flash-text');
-const flashClose = document.getElementById('flash-close');
-
-function showFlashMessage(msg) {
-    flashText.textContent = msg;
-    flashMessage.classList.remove('hidden');
-}
-flashClose.addEventListener('click', () => flashMessage.classList.add('hidden'));
-
-document.getElementById('depositBtn').addEventListener('click', async () => {
-    const amount = parseFloat(document.getElementById('amount').value);
-    if (!amount || amount <= 0) return showFlashMessage('Введите корректную сумму');
-
-    try {
-        const res = await fetch('/start-deposit', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ amount })
-        });
-
-        if (res.redirected) {
-            window.location.href = res.url;
-            return;
-        }
-
-        const text = await res.text();
-        showFlashMessage('Ошибка: ' + text);
-    } catch (err) {
-        console.error(err);
-        showFlashMessage('Ошибка сервера');
-    }
-});
-</script>
-
+<!-- Кнопка запуска депозита через GET-запрос -->
 <nav class="fixed-footer">
     <a href="/">Главная</a>
     <a href="/group">Моя группа</a>
-    <a href="/deposit">START</a>
+    <a href="/start-deposit">START</a>
     <a href="/history">История</a>
 </nav>
 </body>
