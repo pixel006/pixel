@@ -21,7 +21,7 @@ body {
   border-radius: 16px;
   text-align: center;
   box-shadow: 0 0 32px rgba(0,224,255,0.4);
-  width: 320px;
+  width: 340px;
   position: relative;
 }
 input[type=number] {
@@ -74,7 +74,10 @@ button:hover {
 <div class="container">
   <div id="notification"></div>
   <h2>Введите сумму депозита</h2>
-  <input type="number" id="depositAmount" placeholder="Сумма">
+
+  <p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>
+  <input type="number" id="depositAmount" placeholder="Сумма" min="50" max="<%= currentUser.balance %>">
+
   <button id="depositBtn">Запустить</button>
 </div>
 
@@ -82,21 +85,29 @@ button:hover {
 const depositBtn = document.getElementById('depositBtn');
 const depositInput = document.getElementById('depositAmount');
 const notification = document.getElementById('notification');
+let userBalance = <%= currentUser.balance %>;
 
 function showNotification(message, type="success") {
   notification.textContent = message;
   notification.className = '';
   notification.classList.add(type);
   notification.style.display = 'block';
-  setTimeout(() => {
-    notification.style.display = 'none';
-  }, 3000);
+  setTimeout(() => notification.style.display = 'none', 3000);
 }
 
 depositBtn.addEventListener('click', async () => {
   const amount = parseFloat(depositInput.value);
+
   if (!amount || amount <= 0) {
     showNotification("Введите сумму депозита", "error");
+    return;
+  }
+  if (amount < 50) {
+    showNotification("Минимальная сумма депозита — 50", "error");
+    return;
+  }
+  if (amount > userBalance) {
+    showNotification("Недостаточно средств", "error");
     return;
   }
 
@@ -109,16 +120,12 @@ depositBtn.addEventListener('click', async () => {
       body: JSON.stringify({amount})
     });
 
-    if(!res.ok){
-      showNotification("Ошибка сервера", "error");
-      return;
-    }
-
     const data = await res.json();
 
     if (data.success) {
       showNotification('Операция успешно прошла!', "success");
       depositInput.value = '';
+      userBalance = data.newBalance;
     } else {
       showNotification(data.message || "Ошибка", "error");
     }
