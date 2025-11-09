@@ -166,6 +166,7 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
 <body>
 
 <button id="menuToggle">☰</button>
+
 <aside class="sidebar" id="sidebar">
   <a href="/logout">Выйти</a>
   <a href="/support">Поддержка</a>
@@ -182,7 +183,7 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
 
 <nav class="fixed-footer">
   <a href="/group">Группа</a>
-  <a id="startBtn">START</a>
+  <a id="startBtn" href="/deposit">START</a>
   <a href="/history">История</a>
 </nav>
 
@@ -195,15 +196,6 @@ menuToggle.addEventListener('click', () => {
   sidebar.classList.toggle('open');
   mainContent.classList.toggle('shifted');
 });
-
-// Кнопка START
-const startBtn = document.getElementById('startBtn');
-if(startBtn){
-    startBtn.addEventListener('click', () => {
-        // Прямой переход на страницу депозита
-        window.location.href = '/deposit';
-    });
-}
 </script>
 
 </body>
