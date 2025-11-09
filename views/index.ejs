@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <title>Личный кабинет</title>
     <link rel="stylesheet" href="/style.css">
-    
-    <!-- Мета-тег для мобильных -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <style>
@@ -25,8 +23,6 @@
             display: flex;
             justify-content: flex-end;
             align-items: center;
-            box-shadow: none;
-            border-bottom: none;
         }
 
         a.logout-btn {
@@ -60,28 +56,7 @@
             margin-bottom: 15px;
         }
 
-        /* --- Кнопки --- */
-        .buttons {
-            margin-top: 20px;
-        }
-        .btn {
-            display: inline-block;
-            width: 80%;
-            max-width: 250px;
-            padding: 12px 0;
-            margin: 10px auto;
-            background-color: #5c6bc0;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
-            transition: background 0.3s;
-        }
-        .btn:hover {
-            background-color: #3f4fa3;
-        }
-
-        /* --- Блок пояснений --- */
+        /* --- Информационный блок --- */
         .deposit-info {
             font-size: 0.85em;
             color: #555;
@@ -98,7 +73,7 @@
             line-height: 1.4;
         }
 
-        /* --- Футер --- */
+        /* --- Футер с кнопками --- */
         nav.fixed-footer {
             position: fixed;
             bottom: 0;
@@ -115,16 +90,16 @@
         }
         nav.fixed-footer a {
             display: inline-block;
-            width: 45%;
-            max-width: 200px;
+            width: 30%;
+            max-width: 150px;
             padding: 12px 0;
             background-color: #5c6bc0;
             color: white;
             text-decoration: none;
             border-radius: 5px;
             font-weight: bold;
-            transition: background 0.3s;
             text-align: center;
+            transition: background 0.3s;
         }
         nav.fixed-footer a:hover {
             background-color: #3f4fa3;
@@ -140,35 +115,49 @@
 
     <!-- Основной контент -->
     <div class="container">
-        <p class="balance"><strong>Баланс:</strong> $<%= currentUser.balance.toFixed(2) %></p>
+        <% if (currentUser) { %>
+            <p class="balance"><strong>Баланс:</strong> $<%= currentUser.balance.toFixed(2) %></p>
+            <p>Нажмите кнопку START внизу для запуска депозита.</p>
+        <% } %>
 
-        <div class="buttons">
-            <a href="/deposit" class="btn">Пополнить</a>
-            <a href="/withdraw" class="btn">Вывести</a>
-        </div><!-- --- Информационный блок --- -->
+        <!-- Информационный блок о депозите -->
         <div class="deposit-info">
             <h3>Запуск депозита</h3>
-            <p>Выберите сумму и инициируйте депозит. Введённые средства блокируются в системе и отображаются как «в работе» до окончания периода регулирования.</p>
+            <p>Введённые средства блокируются в системе и отображаются как «в работе» до окончания периода регулирования.</p>
 
             <h3>Начисление доходности</h3>
-            <p>На депозит начисляется 5% ежедневно. Начисленные проценты становятся доступными для вывода по воскресеньям с 08:00 до 20:00. Первоначальная сумма депозита остаётся заблокированной до истечения минимального срока регулирования — один месяц.</p>
-
-            <h3>Реферальная программа</h3>
+            <p>На депозит начисляется 5% ежедневно. Начисленные проценты становятся доступными для вывода по воскресеньям с 08:00 до 20:00. Первоначальная сумма депозита остаётся заблокированной до истечения минимального срока регулирования — один месяц.</p><h3>Реферальная программа</h3>
             <p>Если вы приглашаете новых участников, и они открывают депозит, вы получаете 10% от суммы депозита приглашённого пользователя. Вознаграждение начисляется на ваш баланс автоматически.</p>
         </div>
-
-        <!-- Форма запуска депозита -->
-        <form action="/start-deposit" method="POST">
-            <input type="number" name="amount" placeholder="Сумма в $" step="0.01" required>
-            <button type="submit">Запустить депозит</button>
-        </form>
     </div>
 
-    <!-- Нижняя навигация -->
+    <!-- Нижняя навигация с кнопкой START -->
     <nav class="fixed-footer">
         <a href="/group">Моя группа</a>
+        <a id="depositBtn" class="btn">START</a>
         <a href="/history">История</a>
     </nav>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.getElementById('depositBtn');
+        if (btn) {
+            btn.addEventListener('click', async () => {
+                try {
+                    const res = await fetch('/start-deposit', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount: 100 }) // фиксированная сумма
+                    });
+                    if (res.redirected) window.location.href = res.url;
+                } catch (err) {
+                    alert('Ошибка сервера');
+                    console.error(err);
+                }
+            });
+        }
+    });
+    </script>
 
 </body>
 </html>
