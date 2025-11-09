@@ -4,73 +4,80 @@
     <meta charset="UTF-8">
     <title>Личный кабинет</title>
     <link rel="stylesheet" href="/style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <style>
-        body {
+        /* --- Базовые стили --- */
+        * {
+            box-sizing: border-box;
             margin: 0;
-            padding-bottom: 100px; /* чтобы футер не перекрывал контент */
-            font-family: Arial, sans-serif;
-            background-color: #f0f4f8;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background: #f5f7fa;
             color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         /* --- Шапка --- */
         header {
-            background: #f0f4f8;
-            color: #333;
-            padding: 15px 20px;
             display: flex;
             justify-content: flex-end;
             align-items: center;
+            padding: 15px 30px;
+            background: #ffffff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            z-index: 1000;
         }
 
         a.logout-btn {
-            background: #f0f4f8;
-            border: none;
-            color: #333;
+            background: #ff6b6b;
+            color: #fff;
+            padding: 10px 16px;
+            border-radius: 8px;
             text-decoration: none;
-            padding: 8px 14px;
-            border-radius: 6px;
-            font-weight: bold;
-            transition: background 0.3s, color 0.3s;
-        }
-        a.logout-btn:hover {
-            background: #e0e0e0;
+            font-weight: 600;
+            transition: background 0.3s;
         }
 
-        /* --- Контейнер --- */
+        a.logout-btn:hover {
+            background: #e55a5a;
+        }
+
+        /* --- Основной контейнер --- */
         .container {
-            max-width: 600px;
+            flex: 1;
+            max-width: 700px;
             width: 90%;
             margin: 40px auto;
-            padding: 20px;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            padding: 25px 30px;
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.05);
             text-align: center;
         }
 
         .balance {
-            font-size: 1.3em;
-            margin-bottom: 15px;
+            font-size: 1.6em;
+            font-weight: 600;
+            margin-bottom: 20px;
         }
 
-        /* --- Информационный блок --- */
-        .deposit-info {
-            font-size: 0.85em;
-            color: #555;
-            margin: 20px 0;
+        .info-block {
             text-align: left;
+            margin-top: 25px;
+            color: #555;
+            line-height: 1.6;
         }
-        .deposit-info h3 {
-            font-size: 1em;
-            margin-bottom: 5px;
+
+        .info-block h3 {
+            margin-bottom: 8px;
+            font-size: 1.1em;
             color: #333;
-        }
-        .deposit-info p {
-            margin-bottom: 12px;
-            line-height: 1.4;
         }
 
         /* --- Футер с кнопками --- */
@@ -81,83 +88,82 @@
             width: 100%;
             background: #fff;
             padding: 12px 0;
-            text-align: center;
-            box-shadow: 0 -2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.05);
             display: flex;
             justify-content: center;
-            gap: 10px;
+            gap: 12px;
             flex-wrap: wrap;
         }
+
         nav.fixed-footer a {
-            display: inline-block;
-            width: 30%;
-            max-width: 150px;
-            padding: 12px 0;
-            background-color: #5c6bc0;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            font-weight: bold;
+            flex: 1;
+            max-width: 200px;
             text-align: center;
-            transition: background 0.3s;
+            padding: 12px 0;
+            text-decoration: none;
+            color: #fff;
+            font-weight: 600;
+            border-radius: 10px;
+            transition: background 0.3s, transform 0.2s;
         }
+
         nav.fixed-footer a:hover {
-            background-color: #3f4fa3;
+            transform: translateY(-2px);
+        }
+
+        a.group-btn { background: #5c6bc0; }
+        a.start-btn { background: #00b894; }
+        a.history-btn { background: #fdcb6e; }
+
+        /* --- Адаптивность --- */
+        @media (max-width: 500px) {
+            nav.fixed-footer a {
+                max-width: 100%;
+                flex: 1 1 100%;
+            }
         }
     </style>
 </head>
 <body>
 
-    <!-- Шапка с кнопкой выхода -->
-    <header>
-        <a href="/logout" class="logout-btn">Выйти</a>
-    </header>
+<header>
+    <a href="/logout" class="logout-btn">Выйти</a>
+</header>
 
-    <!-- Основной контент -->
-    <div class="container">
-        <% if (currentUser) { %>
-            <p class="balance"><strong>Баланс:</strong> $<%= currentUser.balance.toFixed(2) %></p>
-            <p>Нажмите кнопку START внизу для запуска депозита.</p>
-        <% } %>
-
-        <!-- Информационный блок о депозите -->
-        <div class="deposit-info">
+<div class="container">
+    <% if (currentUser) { %>
+        <p class="balance">Баланс: $<%= currentUser.balance.toFixed(2) %></p>
+        <div class="info-block">
             <h3>Запуск депозита</h3>
-            <p>Введённые средства блокируются в системе и отображаются как «в работе» до окончания периода регулирования.</p>
-
-            <h3>Начисление доходности</h3>
-            <p>На депозит начисляется 5% ежедневно. Начисленные проценты становятся доступными для вывода по воскресеньям с 08:00 до 20:00. Первоначальная сумма депозита остаётся заблокированной до истечения минимального срока регулирования — один месяц.</p><h3>Реферальная программа</h3>
-            <p>Если вы приглашаете новых участников, и они открывают депозит, вы получаете 10% от суммы депозита приглашённого пользователя. Вознаграждение начисляется на ваш баланс автоматически.</p>
+            <p>Нажмите кнопку <strong>START</strong> внизу, чтобы активировать депозит. Средства будут заблокированы и начнут начислять доходность автоматически.</p>
         </div>
-    </div>
+    <% } %>
+</div>
 
-    <!-- Нижняя навигация с кнопкой START -->
-    <nav class="fixed-footer">
-        <a href="/group">Моя группа</a>
-        <a id="depositBtn" class="btn">START</a>
-        <a href="/history">История</a>
-    </nav>
-
-    <script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const btn = document.getElementById('depositBtn');
-        if (btn) {
-            btn.addEventListener('click', async () => {
-                try {
-                    const res = await fetch('/start-deposit', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ amount: 100 }) // фиксированная сумма
-                    });
-                    if (res.redirected) window.location.href = res.url;
-                } catch (err) {
-                    alert('Ошибка сервера');
-                    console.error(err);
-                }
-            });
-        }
-    });
-    </script>
+<nav class="fixed-footer">
+    <a href="/group" class="group-btn">Моя группа</a>
+    <a id="depositBtn" class="start-btn">START</a>
+    <a href="/history" class="history-btn">История</a>
+</nav><script>
+document.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('depositBtn');
+    if (btn) {
+        btn.addEventListener('click', async () => {
+            try {
+                const res = await fetch('/start-deposit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount: 100 }) // фиксированная сумма
+                });
+                if (res.redirected) window.location.href = res.url;
+            } catch (err) {
+                alert('Ошибка сервера');
+                console.error(err);
+            }
+        });
+    }
+});
+</script>
 
 </body>
 </html>
