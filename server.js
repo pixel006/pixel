@@ -5,6 +5,7 @@ const session = require('express-session');
 const methodOverride = require('method-override');
 const User = require('./models/User');
 const Deposit = require('./models/Deposit');
+const cron = require('node-cron');
 
 const app = express();
 
@@ -30,20 +31,24 @@ mongoose.connect(process.env.MONGO_URI)
 // =======================
 // --- Функция начисления процентов ---
 // =======================
-async function accrueDailyInterest(userId) {
+async function accrueDailyInterest() {
     try {
-        const deposits = await Deposit.find({ userId, status: 'active' });
+        const deposits = await Deposit.find({ status: 'active' });
         const today = new Date();
 
         for (let dep of deposits) {
+            const user = await User.findById(dep.userId);
+            if (!user) continue;
+
             const days = Math.floor((today - dep.lastInterestDate) / (1000*60*60*24));
-            if (days > 0) {
-                const interest = dep.principal * 0.05 * days;
+            if (days > 0 && dep.remainingDays > 0) {
+                const interest = dep.principal * 0.045;
                 dep.accrued += interest;
+                dep.remainingDays -= 1;
                 dep.lastInterestDate = today;
                 await dep.save();
 
-                const user = await User.findById(userId);
+                user.balance += interest;
                 if (!user.transactions) user.transactions = [];
                 user.transactions.push({
                     type: 'interest',
@@ -53,12 +58,18 @@ async function accrueDailyInterest(userId) {
                     status: 'completed'
                 });
                 await user.save();
+
+                if (dep.remainingDays === 0) dep.status = 'completed';
+                await dep.save();
             }
         }
     } catch (err) {
         console.error('Ошибка начисления процентов:', err);
     }
 }
+
+// --- Запуск cron каждый день в 03:00 ---
+cron.schedule('0 3 * * *', accrueDailyInterest);
 
 // =======================
 // --- Регистрация ---
@@ -98,9 +109,7 @@ app.post('/register', async (req, res) => {
         req.session.userId = user._id;
         req.session.userName = user.name;
         req.session.userEmail = user.email;
-        if (normalizedEmail === adminEmail) return res.redirect('/admin');
-
-        res.redirect('/');
+        if (normalizedEmail === adminEmail) return res.redirect('/admin');res.redirect('/');
     } catch (err) {
         console.error('Ошибка регистрации:', err);
         res.render('register', { error: 'Ошибка регистрации: ' + err.message });
@@ -110,7 +119,9 @@ app.post('/register', async (req, res) => {
 // =======================
 // --- Логин ---
 // =======================
-app.get('/login', (req, res) => res.render('login', { error: null }));app.post('/login', async (req, res) => {
+app.get('/login', (req, res) => res.render('login', { error: null }));
+
+app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
         if (!email) return res.render('login', { error: 'Email обязателен' });
@@ -171,8 +182,6 @@ app.get('/group', async (req, res) => {
         if (req.session.userId === "admin") return res.redirect('/admin');
 
         const currentUser = await User.findById(req.session.userId);
-        if (!currentUser) return res.redirect('/login');
-
         const team = await User.find({ referredBy: currentUser.referralCode });
         res.render('group', { currentUser, team, request: req });
     } catch (err) {
@@ -188,10 +197,12 @@ app.get('/deposit', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
         const user = await User.findById(req.session.userId);
-        if (!user) return res.redirect('/login');
 
-        console.log('GET /deposit user:', user.email);
-        res.render('deposit', { currentUser: user, error: null });
+        // Проверяем, можно ли делать депозит (1 раз в месяц)
+        const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
+        const canDeposit = !lastDeposit || ((new Date() - lastDeposit.createdAt) / (1000*60*60*24) >= 30);
+
+        res.render('deposit', { currentUser: user, error: null, canDeposit });
     } catch (err) {
         console.error('Ошибка GET /deposit:', err);
         res.status(500).send('Ошибка сервера');
@@ -204,45 +215,39 @@ app.post('/start-deposit', async (req, res) => {
 
         const { amount } = req.body;
         const numericAmount = parseFloat(amount);
-        if (!numericAmount || numericAmount <= 0) return res.status(400).send('Введите корректную сумму');
+        const user = await User.findById(req.session.userId);if (!numericAmount || numericAmount <= 0) return res.render('deposit', { currentUser: user, error: 'Введите корректную сумму' });
+        if (numericAmount > user.balance) return res.render('deposit', { currentUser: user, error: 'Сумма больше баланса' });
 
-        const deposit = new Deposit({
-            userId: req.session.userId,
-            principal: numericAmount,
-            accrued: 0,
-            status: 'active',
-            lastInterestDate: new Date()
-        });
-        await deposit.save();
+        // Проверяем последний депозит
+        const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
+        if (lastDeposit && ((new Date() - lastDeposit.createdAt) / (1000*60*60*24) < 30)) {
+            return res.render('deposit', { currentUser: user, error: 'Депозит можно делать только раз в месяц' });
+        }
 
-        const user = await User.findById(req.session.userId);
+        // Списываем с баланса
+        user.balance -= numericAmount;
         if (!user.transactions) user.transactions = [];
         user.transactions.push({
             type: 'deposit',
             amount: numericAmount,
-            description: `В работе ${numericAmount}$`,
+            description: `Депозит ${numericAmount}$`,
             date: new Date(),
             status: 'active'
-        });// Реферальное вознаграждение
-        if (user.referredBy) {
-            const referrer = await User.findOne({ referralCode: user.referredBy });
-            if (referrer) {
-                if (!referrer.transactions) referrer.transactions = [];
-                const reward = numericAmount * 0.10;
-                referrer.balance += reward;
-                referrer.transactions.push({
-                    type: 'referral',
-                    amount: reward,
-                    description: `Реферальное вознаграждение за депозит ${user.name}`,
-                    date: new Date(),
-                    status: 'completed'
-                });
-                await referrer.save();
-            }
-        }
+        });
 
+        const deposit = new Deposit({
+            userId: user._id,
+            principal: numericAmount,
+            accrued: 0,
+            status: 'active',
+            remainingDays: 30,
+            lastInterestDate: new Date(),
+            createdAt: new Date()
+        });
+        await deposit.save();
         await user.save();
-        res.redirect('/history');
+
+        res.redirect('/deposit-success');
     } catch (err) {
         console.error('Ошибка POST /start-deposit:', err);
         res.status(500).send('Ошибка сервера');
@@ -255,15 +260,9 @@ app.post('/start-deposit', async (req, res) => {
 app.get('/history', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
-        if (req.session.userId === "admin") return res.redirect('/admin');
-
         const currentUser = await User.findById(req.session.userId);
-        if (!currentUser) return res.redirect('/login');
-
-        await accrueDailyInterest(req.session.userId);
         const deposits = await Deposit.find({ userId: currentUser._id });
         const transactions = currentUser.transactions || [];
-
         res.render('history', { currentUser, deposits, transactions });
     } catch (err) {
         console.error('Ошибка GET /history:', err);
@@ -277,8 +276,6 @@ app.get('/history', async (req, res) => {
 app.get('/withdraw', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
-        if (req.session.userId === "admin") return res.redirect('/admin');
-
         const user = await User.findById(req.session.userId);
         res.render('withdraw', { currentUser: user, error: null });
     } catch (err) {
@@ -290,7 +287,6 @@ app.get('/withdraw', async (req, res) => {
 app.post('/withdraw', async (req, res) => {
     try {
         if (!req.session.userId) return res.status(401).send('Не авторизован');
-
         const user = await User.findById(req.session.userId);
         const { amount, cryptoAddress } = req.body;
         const numericAmount = parseFloat(amount);
@@ -320,12 +316,10 @@ app.post('/withdraw', async (req, res) => {
             date: new Date(),
             destination: cryptoAddress,
             status: 'pending'
-        };
-        if (!user.transactions) user.transactions = [];
+        };if (!user.transactions) user.transactions = [];
         user.transactions.push(tx);
         user.balance -= totalDeduction;
         await user.save();
-
         res.render('withdraw', { currentUser: user, tx });
     } catch (err) {
         console.error('Ошибка POST /withdraw:', err);
@@ -338,7 +332,9 @@ app.post('/withdraw', async (req, res) => {
 // =======================
 app.get('/logout', (req, res) => {
     req.session.destroy(() => res.redirect('/login'));
-});// =======================
+});
+
+// =======================
 // --- Админ-панель ---
 // =======================
 app.get('/admin', async (req, res) => {
