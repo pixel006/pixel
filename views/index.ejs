@@ -2,185 +2,181 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Личный кабинет</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Личный кабинет</title>
 <link rel="stylesheet" href="/style.css">
-
 <style>
-/* --- Базовые стили --- */
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Inter', Arial, sans-serif;
-}
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #0f0f1a;
+        color: #fff;
+        overflow-x: hidden;
+    }
 
-body {
-    background: #0d0f17;
-    color: #fff;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
+    /* --- Кнопка-гамбургер --- */
+    #menuToggle {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        width: 50px;
+        height: 50px;
+        background: #162447;
+        border: none;
+        border-radius: 8px;
+        color: #00ffea;
+        font-size: 1.5em;
+        cursor: pointer;
+        z-index: 2000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 10px rgba(0,255,234,0.5);
+        transition: background 0.3s;
+    }
+    #menuToggle:hover {
+        background: #1f4068;
+    }
 
-/* --- Шапка --- */
-header {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding: 15px 30px;
-    background: rgba(20, 20, 35, 0.9);
-    backdrop-filter: blur(8px);
-}
+    /* --- Боковая панель --- */
+    aside.sidebar {
+        position: fixed;
+        top: 0;
+        left: -180px; /* скрыта изначально */
+        width: 180px;
+        height: 100vh;
+        background: linear-gradient(180deg, #1a1a2e, #162447);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-top: 70px;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.5);
+        transition: left 0.3s ease;
+        z-index: 1500;
+    }
 
-a.logout-btn {
-    background: #ff4d6d;
-    color: #fff;
-    padding: 10px 16px;
-    border-radius: 12px;
-    text-decoration: none;
-    font-weight: 600;
-    transition: 0.3s all;
-}
+    aside.sidebar.open {
+        left: 0;
+    }
 
-a.logout-btn:hover {
-    background: #e03f5a;
-    transform: translateY(-2px);
-}
-
-/* --- Контейнер с балансом --- */
-.container {
-    flex: 1;
-    max-width: 700px;
-    width: 90%;
-    margin: 40px auto;
-    padding: 30px 25px;
-    background: linear-gradient(145deg, #1a1c2b, #252740);
-    border-radius: 20px;
-    box-shadow: 0 0 30px rgba(0,255,255,0.2), 0 10px 40px rgba(0,0,0,0.4);
-    text-align: center;
-}
-
-.balance {
-    font-size: 2em;
-    font-weight: 700;
-    color: #00ffe0;
-    margin-bottom: 20px;
-    text-shadow: 0 0 10px #00ffe0;
-}
-
-.info-block {
-    text-align: left;
-    color: #aaa;
-    font-size: 0.95em;
-    line-height: 1.5;
-    margin-top: 20px;
-}
-
-.info-block h3 {
-    color: #00ffe0;
-    margin-bottom: 6px;
-    font-size: 1.1em;
-}
-
-/* --- Футер с кнопками --- */
-nav.fixed-footer {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    background: rgba(20,20,35,0.9);
-    backdrop-filter: blur(12px);
-    display: flex;
-    justify-content: space-around;
-    padding: 12px 0;
-    box-shadow: 0 -2px 15px rgba(0,255,255,0.1);
-    z-index: 100;
-}
-
-nav.fixed-footer a {
-    flex: 1;
-    max-width: 200px;
-    text-align: center;
-    padding: 14px 0;
-    text-decoration: none;
-    font-weight: 700;
-    border-radius: 15px;
-    color: #fff;
-    transition: all 0.3s ease;
-    background: linear-gradient(45deg, #00ffe0, #4d9aff);
-    box-shadow: 0 0 15px rgba(0,255,224,0.4), 0 5px 10px rgba(0,0,0,0.3);
-}
-
-nav.fixed-footer a:hover {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 0 25px rgba(0,255,224,0.7), 0 10px 20px rgba(0,0,0,0.4);
-}
-
-.start-btn {
-    background: linear-gradient(45deg, #ff6aff, #ffb84d);
-    box-shadow: 0 0 15px rgba(255,106,255,0.5), 0 5px 10px rgba(0,0,0,0.3);
-}
-
-.start-btn:hover {
-    transform: translateY(-3px) scale(1.05);
-    box-shadow: 0 0 25px rgba(255,106,255,0.8), 0 10px 20px rgba(0,0,0,0.4);
-}
-
-/* --- Адаптивность --- */
-@media (max-width: 480px) {
-    nav.fixed-footer a {
-        flex: 1 1 30%;
-        font-size: 0.9em;
+    aside.sidebar a {
+        width: 80%;
+        text-align: center;
+        margin: 15px 0;
         padding: 12px 0;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #00ffea;
+        font-weight: bold;
+        background: #1f4068;
+        transition: all 0.3s;
     }
 
-    .container {
-        padding: 25px 15px;
+    aside.sidebar a:hover {
+        background: #e43f5a;
+        transform: scale(1.05);
+        box-shadow: 0 0 10px #e43f5a;
     }
-}
+
+    /* --- Основной контент --- */
+    main.content {
+        padding: 40px;
+        transition: margin-left 0.3s ease;
+        margin-left: 0;
+    }
+    main.content.shifted {
+        margin-left: 180px;
+    }
+
+    .balance {
+        font-size: 1.5em;
+        margin-bottom: 20px;
+        color: #00ffea;
+    }
+
+    /* --- Нижняя навигация --- */
+    nav.fixed-footer {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        padding: 15px 0;
+        background: rgba(30,30,50,0.9);
+        backdrop-filter: blur(6px);
+    }
+
+    nav.fixed-footer a {
+        flex: 1;
+        max-width: 150px;
+        text-align: center;
+        padding: 12px 0;
+        background: #162447;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: bold;
+        color: #00ffea;
+        transition: all 0.3s;
+    }
+    nav.fixed-footer a:hover {
+        background: #e43f5a;
+        color: #fff;
+        transform: scale(1.05);
+    }
 </style>
 </head>
 <body>
 
-<header>
-    <a href="/logout" class="logout-btn">Выйти</a>
-</header>
+<!-- Кнопка-гамбургер -->
+<button id="menuToggle">&#9776;</button>
 
-<div class="container">
+<!-- Боковая панель -->
+<aside class="sidebar" id="sidebar">
+    <a href="/logout">Выйти</a>
+    <a href="/support">Служба поддержки</a>
+    <a href="/settings">Настройки</a>
+</aside>
+
+<!-- Основной контент -->
+<main class="content" id="mainContent">
     <% if (currentUser) { %>
         <p class="balance">Баланс: $<%= currentUser.balance.toFixed(2) %></p>
-        <div class="info-block">
-            <h3>Запуск депозита</h3>
-            <p>Нажмите кнопку <strong>START</strong> внизу, чтобы активировать депозит. Средства будут заблокированы и начнут начислять доходность автоматически.</p>
-        </div>
+        <p>Нажмите кнопку START внизу для запуска депозита.</p>
     <% } %>
-</div>
+</main>
 
+<!-- Нижняя футуристическая навигация -->
 <nav class="fixed-footer">
     <a href="/group">Моя группа</a>
-    <a id="depositBtn" class="start-btn">START</a>
+    <a id="depositBtn">START</a>
     <a href="/history">История</a>
 </nav>
 
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('depositBtn');
-    if (btn) {
-        btn.addEventListener('click', async () => {try {
-                const res = await fetch('/start-deposit', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ amount: 100 }) // фиксированная сумма для депозита
-                });
-                if (res.redirected) window.location.href = res.url;
-            } catch (err) {
-                alert('Ошибка сервера');
-                console.error(err);
-            }
-        });
-    }
-});
+    const menuToggle = document.getElementById('menuToggle');
+    const sidebar = document.getElementById('sidebar');
+    const mainContent = document.getElementById('mainContent');
+
+    menuToggle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+        mainContent.classList.toggle('shifted');
+    });// Кнопка START
+    const depositBtn = document.getElementById('depositBtn');
+    depositBtn.addEventListener('click', async () => {
+        try {
+            const res = await fetch('/start-deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ amount: 100 })
+            });
+            if (res.redirected) window.location.href = res.url;
+        } catch (err) {
+            alert('Ошибка сервера');
+            console.error(err);
+        }
+    });
 </script>
 
 </body>
