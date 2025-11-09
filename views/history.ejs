@@ -1,81 +1,183 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>История депозитов и начислений</title>
-    <link rel="stylesheet" href="/style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>
-        body { font-family: Arial, sans-serif; background-color: #f0f4f8; margin: 0; padding-bottom: 80px; }
-        .container { max-width: 700px; width: 90%; margin: 40px auto; padding: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1, h2 { text-align: center; color: #333; margin-bottom: 20px; }
-        .deposit-card { padding:10px; margin-bottom:10px; border:1px solid #ddd; border-radius:8px; background:#f9f9f9; }
-        table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        th, td { padding: 12px; border-bottom: 1px solid #ddd; text-align: left; word-break: break-word; }
-        th { background-color: #5c6bc0; color: white; }
-        tr:hover { background-color: #f1f1f1; }
-        p.no-transactions { text-align: center; font-size: 1em; color: #555; margin-top: 20px; }
-        nav.fixed-footer { position: fixed; bottom: 0; left: 0; width: 100%; background: #fff; padding: 12px 0; text-align: center; box-shadow: 0 -2px 5px rgba(0,0,0,0.1); }
-        nav.fixed-footer a { display: inline-block; padding: 12px 25px; margin: 0 5px; background-color: #5c6bc0; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; transition: background 0.3s; }
-        nav.fixed-footer a:hover { background-color: #3f4fa3; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>История депозитов и начислений</title>
+<style>
+body {
+  margin: 0;
+  font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+  background: #101222;
+  color: #fff;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  min-height: 100vh;
+  padding: 20px 0;
+}
+.container {
+  background: rgba(20,20,40,0.95);
+  padding: 30px 20px;
+  border-radius: 16px;
+  box-shadow: 0 0 32px rgba(0,224,255,0.4);
+  width: 90%;
+  max-width: 400px;
+  text-align: left;
+  position: relative;
+}
+h1, h2 {
+  text-align: center;
+  color: #00e0ff;
+  margin-bottom: 16px;
+}
+.deposit-card {
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(0,224,255,0.2);
+  border-radius: 12px;
+  padding: 12px;
+  margin-bottom: 12px;
+}
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 0.9em;
+}
+th, td {
+  padding: 10px;
+  border-bottom: 1px solid rgba(0,224,255,0.2);
+  text-align: left;
+}
+th {
+  color: #00e0ff;
+}
+tr:hover {
+  background: rgba(0,224,255,0.1);
+  transition: 0.2s;
+}
+p.no-transactions {
+  text-align: center;
+  font-size: 0.95em;
+  color: rgba(255,255,255,0.7);
+  margin-top: 10px;
+}
+/* Фиксированный футер */
+nav.fixed-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: #101222;
+  padding: 10px 0;
+  text-align: center;
+  box-shadow: 0 -2px 8px rgba(0,224,255,0.3);
+}
+nav.fixed-footer a {
+  display: inline-block;
+  width: 40%;
+  max-width: 150px;
+  margin: 0 5px;
+  padding: 10px 0;
+  background: linear-gradient(135deg, #00e0ff, #6a5acd);
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: 0.3s;
+}
+nav.fixed-footer a:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 20px rgba(0,224,255,0.5);
+}
+/* Уведомления */
+#notification {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: none;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(0,224,255,0.5);
+}
+#notification.success { background: linear-gradient(135deg, #00e0ff, #6a5acd); }
+#notification.error { background: linear-gradient(135deg, #ff4c4c, #ff0000); }
+</style>
 </head>
 <body>
+
 <div class="container">
-    <h1>История депозитов и начислений</h1>
+  <div id="notification"></div>
+  <h1>История депозитов и начислений</h1>
 
-    <!-- Депозиты -->
-    <% if (deposits && deposits.length > 0) { %>
-        <% deposits.forEach(dep => { %>
-            <div class="deposit-card">
-                <strong>Депозит:</strong> <%= dep.principal.toFixed(2) %>$<br>
-                <strong>Статус:</strong> <%= dep.status === 'active' ? 'В работе' : 'Завершён' %><br>
-                <% if (dep.status === 'active') { %>
-                    <strong>Дней до завершения:</strong> <%= dep.daysLeft %> / 30<br>
-                    <strong>Начислено процентов:</strong> <%= dep.accrued.toFixed(2) %>$<br>
-                    <strong>Последнее начисление:</strong> <%= dep.lastInterestDate ? new Date(dep.lastInterestDate).toLocaleString() : '—' %>
-                <% } else { %>
-                    <strong>Депозит завершён после 30 дней</strong><br>
-                    <strong>Всего начислено:</strong> <%= dep.accrued.toFixed(2) %>$<br>
-                    <strong>Завершено:</strong> <%= dep.lastInterestDate ? new Date(dep.lastInterestDate).toLocaleString() : '—' %>
-                <% } %>
-            </div>
+  <!-- Депозиты -->
+  <% if (deposits && deposits.length > 0) { %>
+      <% deposits.forEach(dep => { %>
+        <div class="deposit-card">
+          <strong>Депозит:</strong> <%= dep.principal.toFixed(2) %>$<br>
+          <strong>Статус:</strong> <%= dep.status === 'active' ? 'В работе' : 'Завершён' %><br>
+          <% if (dep.status === 'active') { %>
+            <strong>Дней до завершения:</strong> <%= dep.daysLeft %> / 30<br>
+            <strong>Начислено процентов:</strong> <%= dep.accrued.toFixed(2) %>$<br>
+            <strong>Последнее начисление:</strong> <%= dep.lastInterestDate ? new Date(dep.lastInterestDate).toLocaleString() : '—' %>
+          <% } else { %>
+            <strong>Депозит завершён после 30 дней</strong><br>
+            <strong>Всего начислено:</strong> <%= dep.accrued.toFixed(2) %>$<br>
+            <strong>Завершено:</strong> <%= dep.lastInterestDate ? new Date(dep.lastInterestDate).toLocaleString() : '—' %>
+          <% } %>
+        </div>
+      <% }) %>
+  <% } else { %>
+    <p class="no-transactions">Депозиты пока отсутствуют.</p>
+  <% } %>
+
+  <!-- Транзакции -->
+  <h2>Транзакции</h2>
+  <% if (!transactions || transactions.length === 0) { %>
+    <p class="no-transactions">Операций пока нет.</p>
+  <% } else { %>
+    <table>
+      <thead>
+        <tr>
+          <th>Тип</th>
+          <th>Сумма ($)</th>
+          <th>Дата и время</th><th>Описание</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% transactions.forEach(tx => { %>
+          <tr>
+            <td><%= tx.type %></td>
+            <td><%= tx.amount.toFixed(2) %></td>
+            <td><%= tx.date ? new Date(tx.date).toLocaleString() : '—' %></td>
+            <td><%= tx.description %></td>
+          </tr>
         <% }) %>
-    <% } else { %>
-        <p class="no-transactions">Депозиты пока отсутствуют.</p>
-    <% } %>
+      </tbody>
+    </table>
+  <% } %>
 
-    <!-- Транзакции -->
-    <h2>Транзакции</h2>
-    <% if (!transactions || transactions.length === 0) { %>
-        <p class="no-transactions">Операций пока нет.</p>
-    <% } else { %>
-        <table>
-            <thead>
-                <tr>
-                    <th>Тип</th>
-                    <th>Сумма ($)</th>
-                    <th>Дата и время</th>
-                    <th>Описание</th>
-                </tr>
-            </thead>
-            <tbody>
-                <% transactions.forEach(tx => { %>
-                    <tr>
-                        <td><%= tx.type %></td>
-                        <td><%= tx.amount.toFixed(2) %></td>
-                        <td><%= tx.date ? new Date(tx.date).toLocaleString() : '—' %></td>
-                        <td><%= tx.description %></td>
-                    </tr>
-                <% }) %>
-            </tbody>
-        </table>
-    <% } %>
 </div>
 
 <nav class="fixed-footer">
-    <a href="/">Главная</a>
-    <a href="/group">Моя группа</a>
+  <a href="/">Главная</a>
+  <a href="/group">Моя группа</a>
 </nav>
+
+<script>
+const notification = document.getElementById('notification');
+function showNotification(message, type="success") {
+  notification.textContent = message;
+  notification.className = '';
+  notification.classList.add(type);
+  notification.style.display = 'block';
+  setTimeout(() => notification.style.display = 'none', 3000);
+}
+</script>
+
 </body>
 </html>
