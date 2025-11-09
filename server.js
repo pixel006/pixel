@@ -104,12 +104,11 @@ app.post('/register', async (req, res) => {
             transactions: [],
             referralCode: Math.random().toString(36).substring(2, 8).toUpperCase()
         });
-        await user.save();
-
-        req.session.userId = user._id;
+        await user.save();req.session.userId = user._id;
         req.session.userName = user.name;
         req.session.userEmail = user.email;
-        if (normalizedEmail === adminEmail) return res.redirect('/admin');res.redirect('/');
+        if (normalizedEmail === adminEmail) return res.redirect('/admin');
+        res.redirect('/');
     } catch (err) {
         console.error('Ошибка регистрации:', err);
         res.render('register', { error: 'Ошибка регистрации: ' + err.message });
@@ -128,7 +127,7 @@ app.post('/login', async (req, res) => {
 
         const normalizedEmail = email.toLowerCase();
         const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
-        const adminPassword = process.env.ADMIN_PASSWORD || null;
+        const adminPassword = process.env.ADMIN_PASSWORD ?? null;
 
         // Логин админа
         if (normalizedEmail === adminEmail && password === adminPassword) {
@@ -174,173 +173,12 @@ app.get('/', async (req, res) => {
 });
 
 // =======================
-// --- Страница группы ---
-// =======================
-app.get('/group', async (req, res) => {
-    try {
-        if (!req.session.userId) return res.redirect('/login');
-        if (req.session.userId === "admin") return res.redirect('/admin');
-
-        const currentUser = await User.findById(req.session.userId);
-        const team = await User.find({ referredBy: currentUser.referralCode });
-        res.render('group', { currentUser, team, request: req });
-    } catch (err) {
-        console.error('Ошибка GET /group:', err);
-        res.status(500).send('Ошибка сервера');
-    }
-});
-
-// =======================
-// --- Депозит ---
-// =======================
-app.get('/deposit', async (req, res) => {
-    try {
-        if (!req.session.userId) return res.redirect('/login');
-        const user = await User.findById(req.session.userId);
-
-        // Проверяем, можно ли делать депозит (1 раз в месяц)
-        const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-        const canDeposit = !lastDeposit || ((new Date() - lastDeposit.createdAt) / (1000*60*60*24) >= 30);
-
-        res.render('deposit', { currentUser: user, error: null, canDeposit });
-    } catch (err) {
-        console.error('Ошибка GET /deposit:', err);
-        res.status(500).send('Ошибка сервера');
-    }
-});
-
-app.post('/start-deposit', async (req, res) => {
-    try {
-        if (!req.session.userId) return res.status(401).send('Не авторизован');
-
-        const { amount } = req.body;
-        const numericAmount = parseFloat(amount);
-        const user = await User.findById(req.session.userId);if (!numericAmount || numericAmount <= 0) return res.render('deposit', { currentUser: user, error: 'Введите корректную сумму' });
-        if (numericAmount > user.balance) return res.render('deposit', { currentUser: user, error: 'Сумма больше баланса' });
-
-        // Проверяем последний депозит
-        const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-        if (lastDeposit && ((new Date() - lastDeposit.createdAt) / (1000*60*60*24) < 30)) {
-            return res.render('deposit', { currentUser: user, error: 'Депозит можно делать только раз в месяц' });
-        }
-
-        // Списываем с баланса
-        user.balance -= numericAmount;
-        if (!user.transactions) user.transactions = [];
-        user.transactions.push({
-            type: 'deposit',
-            amount: numericAmount,
-            description: `Депозит ${numericAmount}$`,
-            date: new Date(),
-            status: 'active'
-        });
-
-        const deposit = new Deposit({
-            userId: user._id,
-            principal: numericAmount,
-            accrued: 0,
-            status: 'active',
-            remainingDays: 30,
-            lastInterestDate: new Date(),
-            createdAt: new Date()
-        });
-        await deposit.save();
-        await user.save();
-
-        res.redirect('/deposit-success');
-    } catch (err) {
-        console.error('Ошибка POST /start-deposit:', err);
-        res.status(500).send('Ошибка сервера');
-    }
-});
-
-// =======================
-// --- История операций ---
-// =======================
-app.get('/history', async (req, res) => {
-    try {
-        if (!req.session.userId) return res.redirect('/login');
-        const currentUser = await User.findById(req.session.userId);
-        const deposits = await Deposit.find({ userId: currentUser._id });
-        const transactions = currentUser.transactions || [];
-        res.render('history', { currentUser, deposits, transactions });
-    } catch (err) {
-        console.error('Ошибка GET /history:', err);
-        res.status(500).send('Ошибка сервера');
-    }
-});
-
-// =======================
-// --- Вывод средств ---
-// =======================
-app.get('/withdraw', async (req, res) => {
-    try {
-        if (!req.session.userId) return res.redirect('/login');
-        const user = await User.findById(req.session.userId);
-        res.render('withdraw', { currentUser: user, error: null });
-    } catch (err) {
-        console.error('Ошибка GET /withdraw:', err);
-        res.status(500).send('Ошибка сервера');
-    }
-});
-
-app.post('/withdraw', async (req, res) => {
-    try {
-        if (!req.session.userId) return res.status(401).send('Не авторизован');
-        const user = await User.findById(req.session.userId);
-        const { amount, cryptoAddress } = req.body;
-        const numericAmount = parseFloat(amount);
-
-        if (!numericAmount || numericAmount <= 0) {
-            return res.render('withdraw', { currentUser: user, error: 'Введите корректную сумму' });
-        }
-        if (numericAmount > user.balance) {
-            return res.render('withdraw', { currentUser: user, error: 'Сумма превышает баланс аккаунта' });
-        }
-
-        const now = new Date();
-        const day = now.getDay();
-        const hour = now.getHours();
-        if (day !== 0 || hour < 8 || hour >= 20) {
-            return res.render('withdraw', { currentUser: user, error: 'Вывод доступен только в воскресенье с 08:00 до 20:00' });
-        }
-
-        const fee = numericAmount * 0.02;
-        const totalDeduction = numericAmount + fee;
-
-        const tx = {
-            type: 'withdraw',
-            amount: numericAmount,
-            fee,
-            currency: 'USDT',
-            date: new Date(),
-            destination: cryptoAddress,
-            status: 'pending'
-        };if (!user.transactions) user.transactions = [];
-        user.transactions.push(tx);
-        user.balance -= totalDeduction;
-        await user.save();
-        res.render('withdraw', { currentUser: user, tx });
-    } catch (err) {
-        console.error('Ошибка POST /withdraw:', err);
-        res.status(500).send('Ошибка сервера');
-    }
-});
-
-// =======================
-// --- Выход ---
-// =======================
-app.get('/logout', (req, res) => {
-    req.session.destroy(() => res.redirect('/login'));
-});
-
-// =======================
 // --- Админ-панель ---
 // =======================
 app.get('/admin', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-        if (!req.session.userId || !req.session.userEmail || req.session.userEmail.toLowerCase() !== adminEmail) {
+        if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
             return res.status(403).send('Доступ запрещён');
         }
 
@@ -353,7 +191,71 @@ app.get('/admin', async (req, res) => {
 });
 
 // =======================
+// --- Пополнение и вывод через админку ---
+// =======================
+app.post('/admin/deposit/:id', async (req, res) => {
+    try {
+        const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+        if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
+            return res.status(403).json({ success: false, message: 'Доступ запрещён' });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
+
+        const amount = parseFloat(req.body.amount);
+        if (!amount || amount <= 0) return res.status(400).json({ success: false, message: 'Введите корректную сумму' });
+
+        user.balance += amount;
+        if (!user.transactions) user.transactions = [];
+        user.transactions.push({
+            type: 'deposit',
+            amount,
+            description: `Пополнение админом ${amount}$`,
+            date: new Date(),
+            status: 'completed'
+        });await user.save();
+        res.json({ success: true, message: `Счёт пользователя пополнен на $${amount}` });
+    } catch (err) {
+        console.error('Ошибка POST /admin/deposit/:id:', err);
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
+    }
+});
+
+app.post('/admin/withdraw/:id', async (req, res) => {
+    try {
+        const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+        if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
+            return res.status(403).json({ success: false, message: 'Доступ запрещён' });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
+
+        const amount = parseFloat(req.body.amount);
+        if (!amount || amount <= 0) return res.status(400).json({ success: false, message: 'Введите корректную сумму' });
+        if (user.balance < amount) return res.status(400).json({ success: false, message: 'Недостаточно средств' });
+
+        user.balance -= amount;
+        if (!user.transactions) user.transactions = [];
+        user.transactions.push({
+            type: 'withdraw',
+            amount,
+            description: `Вывод админом ${amount}$`,
+            date: new Date(),
+            status: 'completed'
+        });
+
+        await user.save();
+        res.json({ success: true, message: `Со счёта пользователя выведено $${amount}` });
+    } catch (err) {
+        console.error('Ошибка POST /admin/withdraw/:id:', err);
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
+    }
+});
+
+// =======================
 // --- Запуск сервера ---
 // =======================
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT} 🚀`));
