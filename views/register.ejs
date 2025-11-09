@@ -1,83 +1,84 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Регистрация</title>
-    <link rel="stylesheet" href="/style.css">
-
-    <!-- Мета-тег для мобильных -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background-color: #f0f4f8;
-            color: #333;
-        }
-
-        .container {
-            max-width: 500px;
-            width: 90%; /* адаптивная ширина */
-            margin: 40px auto;
-            padding: 20px;
-            background: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-
-        h1 {
-            margin-bottom: 20px;
-        }
-
-        input[type="text"],
-        input[type="number"],
-        input[type="email"],
-        input[type="password"] {
-            width: 90%;
-            max-width: 400px;
-            padding: 10px;
-            margin: 10px 0;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-            box-sizing: border-box;
-            font-size: 1em;
-        }
-
-        button {
-            width: 90%;
-            max-width: 250px;
-            padding: 12px 0;
-            margin: 15px auto;
-            background-color: #5c6bc0;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-weight: bold;
-            font-size: 1em;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        button:hover {
-            background-color: #3f4fa3;
-        }
-
-        .error {
-            color: red;
-            margin-bottom: 15px;
-        }
-
-        p a {
-            color: #5c6bc0;
-            text-decoration: none;
-        }
-
-        p a:hover {
-            text-decoration: underline;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Регистрация</title>
+<style>
+body {
+    margin: 0;
+    font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+    background: #101222;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}
+.container {
+    background: rgba(20, 20, 40, 0.95);
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 0 32px rgba(0,224,255,0.4);
+    width: 90%;
+    max-width: 420px;
+    text-align: center;
+    position: relative;
+}
+h1 {
+    margin-bottom: 20px;
+    color: #00e0ff;
+}
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="password"] {
+    width: 90%;
+    max-width: 380px;
+    padding: 12px;
+    margin: 10px 0;
+    border-radius: 12px;
+    border: none;
+    background: rgba(0,0,0,0.3);
+    color: #fff;
+    font-size: 1em;
+    box-sizing: border-box;
+}
+input::placeholder {
+    color: rgba(255,255,255,0.6);
+}
+button {
+    width: 90%;
+    max-width: 250px;
+    padding: 12px 0;
+    margin: 15px auto;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #00e0ff, #6a5acd);
+    color: #fff;
+    font-weight: 600;
+    font-size: 1em;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 0 20px rgba(0,224,255,0.4);
+}
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(0,224,255,0.6);
+}
+.error {
+    color: #ff4c4c;
+    margin-bottom: 15px;
+    font-weight: 600;
+}
+p a {
+    color: #00e0ff;
+    text-decoration: none;
+}
+p a:hover {
+    text-decoration: underline;
+}
+</style>
 </head>
 <body>
 <div class="container">
@@ -106,17 +107,13 @@
     <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
 </div>
 
-<!-- Скрипт для авто-заполнения реферального кода -->
 <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const ref = urlParams.get('ref');
-    if(ref) {
-        const referralInput = document.getElementById('referralCode');
-        if(referralInput) {
-            referralInput.value = ref;
-        }
-    }
+const urlParams = new URLSearchParams(window.location.search);
+const ref = urlParams.get('ref');
+if(ref) {
+    const referralInput = document.getElementById('referralCode');
+    if(referralInput) referralInput.value = ref;
+}
 </script>
-
 </body>
 </html>
