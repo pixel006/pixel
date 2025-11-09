@@ -31,7 +31,6 @@ body {
   overflow-x: hidden;
 }
 
-/* Кнопка меню */
 #menuToggle {
   position: fixed;
   top: 24px;
@@ -51,9 +50,11 @@ body {
   justify-content: center;
   box-shadow: var(--accent-glow);
 }
-#menuToggle:hover { background: rgba(0,224,255,0.15); transform: scale(1.05); }
+#menuToggle:hover {
+  background: rgba(0, 224, 255, 0.15);
+  transform: scale(1.05);
+}
 
-/* Боковая панель */
 aside.sidebar {
   position: fixed;
   top:0;
@@ -81,9 +82,24 @@ aside.sidebar {
   border-radius: var(--radius);
   position: relative;
 }
+.sidebar a::before {
+  content:"";
+  position:absolute;
+  left:-20px;
+  top:50%;
+  transform:translateY(-50%);
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:transparent;
+  transition:0.3s;
+}
+.sidebar a:hover::before {
+  background: var(--accent);
+  box-shadow: var(--accent-glow);
+}
 .sidebar a:hover { color: var(--accent); transform:translateX(5px); }
 
-/* Основной контент */
 main.content {
   padding:100px 40px;
   margin-left:0;
@@ -113,29 +129,6 @@ h1 {
 .balance-card h2 { font-size:1.2em; color: var(--text-dim); margin-bottom:8px; }
 .balance-card p { font-size:2em; font-weight:600; color: var(--accent); text-shadow:0 0 18px rgba(0,224,255,0.5); }
 
-/* Кнопка START */
-#startBtn {
-  flex:1;
-  max-width:160px;
-  text-align:center;
-  text-decoration:none;
-  color:#fff;
-  font-weight:600;
-  background: linear-gradient(135deg, var(--accent), var(--accent2));
-  padding:14px 0;
-  border-radius: var(--radius);
-  cursor:pointer;
-  box-shadow: 0 0 20px 3px rgba(0,224,255,0.4);
-  animation: glowPulse 2.5s infinite ease-in-out;
-}
-#startBtn:hover { transform: scale(1.05); box-shadow:0 0 25px 6px rgba(0,224,255,0.5); }
-
-@keyframes glowPulse {
-  0%,100% { box-shadow: 0 0 10px rgba(0,224,255,0.4); }
-  50% { box-shadow:0 0 25px rgba(0,224,255,0.8); }
-}
-
-/* Нижняя навигация */
 nav.fixed-footer {
   position:fixed;
   bottom:0;
@@ -149,40 +142,48 @@ nav.fixed-footer {
   backdrop-filter: blur(20px);
   border-top:1px solid rgba(255,255,255,0.05);
 }
-nav.fixed-footer a { flex:1; text-align:center; border-radius: var(--radius); }
+nav.fixed-footer a {
+  flex:1;
+  max-width:160px;
+  text-align:center;
+  text-decoration:none;
+  color: var(--text);
+  font-weight:500;
+  padding:14px 0;
+  border-radius: var(--radius);
+  background: var(--bg-panel);
+  transition:0.3s;
+}
+nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); box-shadow: var(--accent-glow); }
 
 @media(max-width:600px){
   main.content{padding:80px 24px;}
   .balance-card{padding:24px 28px;}
+  nav.fixed-footer a{font-size:0.85em;max-width:120px;}
 }
 </style>
 </head>
 <body>
 
-<!-- Кнопка меню -->
 <button id="menuToggle">☰</button>
 
-<!-- Боковая панель -->
 <aside class="sidebar" id="sidebar">
   <a href="/logout">Выйти</a>
   <a href="/support">Поддержка</a>
   <a href="/settings">Настройки</a>
-</aside><!-- Основной контент -->
-<main class="content" id="mainContent">
-  <% if (currentUser) { %>
-    <h1>Добро пожаловать, <%= currentUser.name %></h1>
-    <div class="balance-card">
-      <h2>Баланс</h2>
-      <p>$<%= currentUser.balance.toFixed(2) %></p>
-    </div>
-    <p style="margin-top:20px;color:var(--text-dim)">Нажмите <b>START</b> для запуска депозита.</p>
+</aside><main class="content" id="mainContent">
+  <% if(currentUser){ %>
+  <h1>Добро пожаловать, <%= currentUser.name %></h1>
+  <div class="balance-card">
+    <h2>Баланс</h2>
+    <p>$<%= currentUser.balance.toFixed(2) %></p>
+  </div>
   <% } %>
 </main>
 
-<!-- Нижняя навигация -->
 <nav class="fixed-footer">
   <a href="/group">Группа</a>
-  <a href="#" id="startBtn">START</a>
+  <a id="startBtn">START</a>
   <a href="/history">История</a>
 </nav>
 
@@ -196,31 +197,13 @@ menuToggle.addEventListener('click', () => {
   mainContent.classList.toggle('shifted');
 });
 
-// START депозит
+// Кнопка START
 const startBtn = document.getElementById('startBtn');
-startBtn.addEventListener('click', async () => {
-  startBtn.textContent = '...';
-  try {
-    const amount = 100; // можно заменить на любую сумму или input
-    const res = await fetch('/start-deposit', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount })
+if(startBtn){
+    startBtn.addEventListener('click', () => {
+        window.location.href = '/deposit';
     });
-    if (res.redirected) {
-      window.location.href = res.url;
-    } else {
-      const data = await res.json();
-      alert(data.message || 'Депозит успешно запущен!');
-      location.reload();
-    }
-  } catch (err) {
-    console.error(err);
-    alert('Ошибка сервера');
-  } finally {
-    startBtn.textContent = 'START';
-  }
-});
+}
 </script>
 
 </body>
