@@ -16,7 +16,7 @@
   --text-dim: #a0a5b8;
   --radius: 18px;
   --blur: 16px;
-  --shadow-soft: 0 0 32px rgba(0, 0, 0, 0.4);
+  --shadow-soft: 0 0 32px rgba(0,0,0,0.4);
   --font-main: "Inter", "Segoe UI", Roboto, sans-serif;
 }
 
@@ -129,6 +129,27 @@ h1 {
 .balance-card h2 { font-size:1.2em; color: var(--text-dim); margin-bottom:8px; }
 .balance-card p { font-size:2em; font-weight:600; color: var(--accent); text-shadow:0 0 18px rgba(0,224,255,0.5); }
 
+/* START кнопка */
+#startBtn {
+  flex:1;
+  max-width:160px;
+  text-align:center;
+  text-decoration:none;
+  color:#fff;
+  font-weight:600;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  padding:14px 0;
+  border-radius: var(--radius);
+  cursor:pointer;
+  box-shadow: 0 0 20px 3px rgba(0,224,255,0.4);
+  animation: glowPulse 2.5s infinite ease-in-out;
+}
+#startBtn:hover { transform: scale(1.05); box-shadow:0 0 25px 6px rgba(0,224,255,0.5); }
+@keyframes glowPulse {
+  0%,100% { box-shadow: 0 0 10px rgba(0,224,255,0.4); }
+  50% { box-shadow:0 0 25px rgba(0,224,255,0.8); }
+}
+
 nav.fixed-footer {
   position:fixed;
   bottom:0;
@@ -139,8 +160,7 @@ nav.fixed-footer {
   gap:18px;
   padding:20px;
   background: rgba(10,10,20,0.75);
-  backdrop-filter: blur(20px);
-  border-top:1px solid rgba(255,255,255,0.05);
+  backdrop-filter: blur(20px);border-top:1px solid rgba(255,255,255,0.05);
 }
 nav.fixed-footer a {
   flex:1;
@@ -166,24 +186,28 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
 <body>
 
 <button id="menuToggle">☰</button>
-
 <aside class="sidebar" id="sidebar">
   <a href="/logout">Выйти</a>
   <a href="/support">Поддержка</a>
   <a href="/settings">Настройки</a>
-</aside><main class="content" id="mainContent">
+</aside>
+
+<main class="content" id="mainContent">
   <% if(currentUser){ %>
   <h1>Добро пожаловать, <%= currentUser.name %></h1>
   <div class="balance-card">
     <h2>Баланс</h2>
     <p>$<%= currentUser.balance.toFixed(2) %></p>
   </div>
+  <p style="margin-top:30px;color:var(--text-dim);font-size:1.05em;">
+    Нажмите <b>START</b> для запуска депозита.
+  </p>
   <% } %>
 </main>
 
 <nav class="fixed-footer">
   <a href="/group">Группа</a>
-  <a id="startBtn" href="/deposit">START</a>
+  <a id="startBtn">START</a>
   <a href="/history">История</a>
 </nav>
 
@@ -196,6 +220,14 @@ menuToggle.addEventListener('click', () => {
   sidebar.classList.toggle('open');
   mainContent.classList.toggle('shifted');
 });
+
+// Кнопка START — переходит на /deposit
+const startBtn = document.getElementById('startBtn');
+if(startBtn){
+    startBtn.addEventListener('click', () => {
+        window.location.href = '/deposit';
+    });
+}
 </script>
 
 </body>
