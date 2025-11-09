@@ -166,7 +166,6 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
 <body>
 
 <button id="menuToggle">☰</button>
-
 <aside class="sidebar" id="sidebar">
   <a href="/logout">Выйти</a>
   <a href="/support">Поддержка</a>
@@ -201,6 +200,7 @@ menuToggle.addEventListener('click', () => {
 const startBtn = document.getElementById('startBtn');
 if(startBtn){
     startBtn.addEventListener('click', () => {
+        // Прямой переход на страницу депозита
         window.location.href = '/deposit';
     });
 }
