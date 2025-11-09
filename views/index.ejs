@@ -6,12 +6,12 @@
 <title>Личный кабинет — 2030</title>
 
 <style>
-/* ======== ТЕМА 2030 — НЕЙРОМИНИМАЛИЗМ ======== */
 :root {
   --bg-dark: #06070a;
   --bg-panel: rgba(255, 255, 255, 0.03);
   --accent: #00e0ff;
   --accent-glow: 0 0 24px #00e0ff88;
+  --accent2: #6a5acd;
   --text: #f0f4ff;
   --text-dim: #a0a5b8;
   --radius: 18px;
@@ -20,10 +20,7 @@
   --font-main: "Inter", "Segoe UI", Roboto, sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-  transition: all 0.25s ease;
-}
+* { box-sizing: border-box; transition: all 0.25s ease; }
 
 body {
   margin: 0;
@@ -34,7 +31,7 @@ body {
   overflow-x: hidden;
 }
 
-/* ======== КНОПКА-МЕНЮ ======== */
+/* Кнопка меню */
 #menuToggle {
   position: fixed;
   top: 24px;
@@ -54,169 +51,109 @@ body {
   justify-content: center;
   box-shadow: var(--accent-glow);
 }
-#menuToggle:hover {
-  background: rgba(0, 224, 255, 0.15);
-  transform: scale(1.05);
-}
+#menuToggle:hover { background: rgba(0,224,255,0.15); transform: scale(1.05); }
 
-/* ======== БОКОВОЕ МЕНЮ ======== */
+/* Боковая панель */
 aside.sidebar {
   position: fixed;
-  top: 0;
+  top:0;
   left: -260px;
-  width: 260px;
-  height: 100vh;
-  background: rgba(10, 10, 20, 0.8);
+  width:260px;
+  height:100vh;
+  background: rgba(10,10,20,0.8);
   backdrop-filter: blur(30px);
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   padding: 120px 30px;
   box-shadow: inset -1px 0 0 rgba(255,255,255,0.05);
-  transition: left 0.4s cubic-bezier(0.7, 0, 0.2, 1);
+  transition: left 0.4s cubic-bezier(0.7,0,0.2,1);
 }
-.sidebar.open {
-  left: 0;
-}
+.sidebar.open { left:0; }
 .sidebar a {
-  width: 100%;
-  text-decoration: none;
-  color: var(--text);
-  font-weight: 500;
-  font-size: 1.05em;
-  padding: 14px 0;
-  margin: 6px 0;
+  width:100%;
+  text-decoration:none;
+  color:var(--text);
+  font-weight:500;
+  font-size:1.05em;
+  padding:14px 0;
+  margin:6px 0;
   border-radius: var(--radius);
   position: relative;
 }
-.sidebar a::before {
-  content: "";
-  position: absolute;
-  left: -20px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: transparent;
-  transition: 0.3s;
-}
-.sidebar a:hover::before {
-  background: var(--accent);
-  box-shadow: var(--accent-glow);
-}
-.sidebar a:hover {
-  color: var(--accent);
-  transform: translateX(5px);
-}
+.sidebar a:hover { color: var(--accent); transform:translateX(5px); }
 
-/* ======== ОСНОВНОЙ КОНТЕНТ ======== */
+/* Основной контент */
 main.content {
-  padding: 100px 40px;
-  margin-left: 0;
+  padding:100px 40px;
+  margin-left:0;
   transition: margin-left 0.4s ease;
 }
-main.content.shifted {
-  margin-left: 260px;
-}
+main.content.shifted { margin-left:260px; }
+
 h1 {
-  font-weight: 600;
-  letter-spacing: 0.3px;
-  margin-bottom: 30px;
-  background: linear-gradient(90deg, var(--accent), #6a5acd);
+  font-weight:600;
+  letter-spacing:0.3px;
+  margin-bottom:30px;
+  background: linear-gradient(90deg,var(--accent), var(--accent2));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
 .balance-card {
   background: var(--bg-panel);
   backdrop-filter: blur(var(--blur));
   border-radius: var(--radius);
   border: 1px solid rgba(255,255,255,0.05);
   padding: 32px 36px;
-  max-width: 420px;
+  max-width:420px;
   box-shadow: var(--shadow-soft);
+  margin-bottom: 20px;
 }
-.balance-card h2 {
-  font-size: 1.2em;
-  color: var(--text-dim);
-  margin-bottom: 8px;
-}
-.balance-card p {
-  font-size: 2em;
-  font-weight: 600;
-  color: var(--accent);
-  text-shadow: 0 0 18px rgba(0, 224, 255, 0.5);
-}
+.balance-card h2 { font-size:1.2em; color: var(--text-dim); margin-bottom:8px; }
+.balance-card p { font-size:2em; font-weight:600; color: var(--accent); text-shadow:0 0 18px rgba(0,224,255,0.5); }
 
-/* ======== НАВИГАЦИЯ ВНИЗУ ======== */
-nav.fixed-footer {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  padding: 20px;
-  background: rgba(10,10,20,0.75);
-  backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(255,255,255,0.05);
-}
-nav.fixed-footer a {
-  flex: 1;
-  max-width: 160px;
-  text-align: center;
-  text-decoration: none;
-  color: var(--text);
-  font-weight: 500;
-  font-size: 0.95em;
-  background: var(--bg-panel);
-  padding: 14px 0;
+/* Кнопка START */
+#startBtn {
+  flex:1;
+  max-width:160px;
+  text-align:center;
+  text-decoration:none;
+  color:#fff;
+  font-weight:600;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  padding:14px 0;
   border-radius: var(--radius);
-  letter-spacing: 0.5px;
-  transition: 0.3s;
-  position: relative;
-  overflow: hidden;}
-nav.fixed-footer a:hover {
-  color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: var(--accent-glow);
-}
-#depositBtn {
-  background: linear-gradient(135deg, var(--accent), #6a5acd);
-  color: #fff;
-  font-weight: 600;
-  letter-spacing: 0.8px;
-  border: none;
-  border-radius: var(--radius);
-  box-shadow: 0 0 20px 3px rgba(0, 224, 255, 0.4);
-}
-#depositBtn:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 25px 6px rgba(0, 224, 255, 0.5);
-}
-
-/* ======== МИКРОАНИМАЦИИ ======== */
-@keyframes glowPulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(0,224,255,0.4); }
-  50% { box-shadow: 0 0 25px rgba(0,224,255,0.8); }
-}
-#depositBtn {
+  cursor:pointer;
+  box-shadow: 0 0 20px 3px rgba(0,224,255,0.4);
   animation: glowPulse 2.5s infinite ease-in-out;
 }
+#startBtn:hover { transform: scale(1.05); box-shadow:0 0 25px 6px rgba(0,224,255,0.5); }
 
-/* ======== АДАПТИВНОСТЬ ======== */
-@media (max-width: 600px) {
-  main.content {
-    padding: 80px 24px;
-  }
-  .balance-card {
-    padding: 24px 28px;
-  }
-  nav.fixed-footer a {
-    font-size: 0.85em;
-    max-width: 120px;
-  }
+@keyframes glowPulse {
+  0%,100% { box-shadow: 0 0 10px rgba(0,224,255,0.4); }
+  50% { box-shadow:0 0 25px rgba(0,224,255,0.8); }
+}
+
+/* Нижняя навигация */
+nav.fixed-footer {
+  position:fixed;
+  bottom:0;
+  left:0;
+  width:100%;
+  display:flex;
+  justify-content:center;
+  gap:18px;
+  padding:20px;
+  background: rgba(10,10,20,0.75);
+  backdrop-filter: blur(20px);
+  border-top:1px solid rgba(255,255,255,0.05);
+}
+nav.fixed-footer a { flex:1; text-align:center; border-radius: var(--radius); }
+
+@media(max-width:600px){
+  main.content{padding:80px 24px;}
+  .balance-card{padding:24px 28px;}
 }
 </style>
 </head>
@@ -230,26 +167,22 @@ nav.fixed-footer a:hover {
   <a href="/logout">Выйти</a>
   <a href="/support">Поддержка</a>
   <a href="/settings">Настройки</a>
-</aside>
-
-<!-- Основной контент -->
+</aside><!-- Основной контент -->
 <main class="content" id="mainContent">
   <% if (currentUser) { %>
-  <h1>Добро пожаловать, <%= currentUser.name %></h1>
-  <div class="balance-card">
-    <h2>Баланс</h2>
-    <p>$<%= currentUser.balance.toFixed(2) %></p>
-  </div>
-  <p style="margin-top:30px;color:var(--text-dim);font-size:1.05em;">
-    Нажмите <b>START</b> внизу для запуска депозита.
-  </p>
+    <h1>Добро пожаловать, <%= currentUser.name %></h1>
+    <div class="balance-card">
+      <h2>Баланс</h2>
+      <p>$<%= currentUser.balance.toFixed(2) %></p>
+    </div>
+    <p style="margin-top:20px;color:var(--text-dim)">Нажмите <b>START</b> для запуска депозита.</p>
   <% } %>
 </main>
 
 <!-- Нижняя навигация -->
 <nav class="fixed-footer">
   <a href="/group">Группа</a>
-  <a id="depositBtn">START</a>
+  <a href="#" id="startBtn">START</a>
   <a href="/history">История</a>
 </nav>
 
@@ -263,20 +196,29 @@ menuToggle.addEventListener('click', () => {
   mainContent.classList.toggle('shifted');
 });
 
-const depositBtn = document.getElementById('depositBtn');
-depositBtn.addEventListener('click', async () => {
-  depositBtn.textContent = '...';
+// START депозит
+const startBtn = document.getElementById('startBtn');
+startBtn.addEventListener('click', async () => {
+  startBtn.textContent = '...';
   try {
+    const amount = 100; // можно заменить на любую сумму или input
     const res = await fetch('/start-deposit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount: 100 })
+      body: JSON.stringify({ amount })
     });
-    if (res.redirected) window.location.href = res.url;
+    if (res.redirected) {
+      window.location.href = res.url;
+    } else {
+      const data = await res.json();
+      alert(data.message || 'Депозит успешно запущен!');
+      location.reload();
+    }
   } catch (err) {
+    console.error(err);
     alert('Ошибка сервера');
   } finally {
-    depositBtn.textContent = 'START';
+    startBtn.textContent = 'START';
   }
 });
 </script>
