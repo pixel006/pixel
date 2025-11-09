@@ -104,10 +104,11 @@ app.post('/register', async (req, res) => {
             transactions: [],
             referralCode: Math.random().toString(36).substring(2, 8).toUpperCase()
         });
-        await user.save();req.session.userId = user._id;
+        await user.save();
+
+        req.session.userId = user._id;
         req.session.userName = user.name;
-        req.session.userEmail = user.email;
-        if (normalizedEmail === adminEmail) return res.redirect('/admin');
+        req.session.userEmail = user.email;if (normalizedEmail === adminEmail) return res.redirect('/admin');
         res.redirect('/');
     } catch (err) {
         console.error('Ошибка регистрации:', err);
@@ -173,6 +174,101 @@ app.get('/', async (req, res) => {
 });
 
 // =======================
+// --- Deposit ---
+// =======================
+app.get('/deposit', async (req, res) => {
+    try {
+        if (!req.session.userId) return res.redirect('/login');
+        const user = await User.findById(req.session.userId);
+
+        const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
+        const canDeposit = !lastDeposit || ((new Date() - lastDeposit.createdAt) / (1000*60*60*24) >= 30);
+
+        res.render('deposit', { currentUser: user, error: null, canDeposit });
+    } catch (err) {
+        console.error('Ошибка GET /deposit:', err);
+        res.status(500).send('Ошибка сервера');
+    }
+});
+
+app.post('/start-deposit', async (req, res) => {
+    try {
+        if (!req.session.userId) return res.status(401).send('Не авторизован');
+
+        const { amount } = req.body;
+        const numericAmount = parseFloat(amount);
+        const user = await User.findById(req.session.userId);
+
+        if (!numericAmount || numericAmount <= 0) return res.render('deposit', { currentUser: user, error: 'Введите корректную сумму', canDeposit: true });
+        if (numericAmount > user.balance) return res.render('deposit', { currentUser: user, error: 'Сумма больше баланса', canDeposit: true });
+
+        const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
+        if (lastDeposit && ((new Date() - lastDeposit.createdAt) / (1000*60*60*24) < 30)) {
+            return res.render('deposit', { currentUser: user, error: 'Депозит можно делать только раз в месяц', canDeposit: false });
+        }user.balance -= numericAmount;
+        if (!user.transactions) user.transactions = [];
+        user.transactions.push({
+            type: 'deposit',
+            amount: numericAmount,
+            description: `Депозит ${numericAmount}$`,
+            date: new Date(),
+            status: 'active'
+        });
+
+        const deposit = new Deposit({
+            userId: user._id,
+            principal: numericAmount,
+            accrued: 0,
+            status: 'active',
+            remainingDays: 30,
+            lastInterestDate: new Date(),
+            createdAt: new Date()
+        });
+
+        await deposit.save();
+        await user.save();
+
+        res.redirect('/deposit-success');
+    } catch (err) {
+        console.error('Ошибка POST /start-deposit:', err);
+        res.status(500).send('Ошибка сервера');
+    }
+});
+
+// =======================
+// --- Group ---
+// =======================
+app.get('/group', async (req, res) => {
+    try {
+        if (!req.session.userId) return res.redirect('/login');
+        if (req.session.userId === "admin") return res.redirect('/admin');
+
+        const currentUser = await User.findById(req.session.userId);
+        const team = await User.find({ referredBy: currentUser.referralCode });
+        res.render('group', { currentUser, team, request: req });
+    } catch (err) {
+        console.error('Ошибка GET /group:', err);
+        res.status(500).send('Ошибка сервера');
+    }
+});
+
+// =======================
+// --- History ---
+// =======================
+app.get('/history', async (req, res) => {
+    try {
+        if (!req.session.userId) return res.redirect('/login');
+        const currentUser = await User.findById(req.session.userId);
+        const deposits = await Deposit.find({ userId: currentUser._id });
+        const transactions = currentUser.transactions || [];
+        res.render('history', { currentUser, deposits, transactions });
+    } catch (err) {
+        console.error('Ошибка GET /history:', err);
+        res.status(500).send('Ошибка сервера');
+    }
+});
+
+// =======================
 // --- Админ-панель ---
 // =======================
 app.get('/admin', async (req, res) => {
@@ -214,15 +310,15 @@ app.post('/admin/deposit/:id', async (req, res) => {
             description: `Пополнение админом ${amount}$`,
             date: new Date(),
             status: 'completed'
-        });await user.save();
+        });
+
+        await user.save();
         res.json({ success: true, message: `Счёт пользователя пополнен на $${amount}` });
     } catch (err) {
         console.error('Ошибка POST /admin/deposit/:id:', err);
         res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
-});
-
-app.post('/admin/withdraw/:id', async (req, res) => {
+});app.post('/admin/withdraw/:id', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
         if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
