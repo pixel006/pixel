@@ -16,11 +16,13 @@ body {
   height: 100vh;
 }
 .container {
-  background: rgba(20, 20, 40, 0.9);
+  background: rgba(20, 20, 40, 0.95);
   padding: 40px;
   border-radius: 16px;
   text-align: center;
   box-shadow: 0 0 32px rgba(0,224,255,0.4);
+  width: 320px;
+  position: relative;
 }
 input[type=number] {
   width: 100%;
@@ -42,15 +44,35 @@ button {
   color: #fff;
   cursor: pointer;
   box-shadow: 0 0 20px rgba(0,224,255,0.4);
+  transition: 0.3s;
 }
 button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px rgba(0,224,255,0.6);
 }
+
+/* Уведомления */
+#notification {
+  position: absolute;
+  top: -60px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0,0,0,0.8);
+  padding: 12px 20px;
+  border-radius: 12px;
+  font-weight: 600;
+  display: none;
+  color: #fff;
+  box-shadow: 0 0 20px rgba(0,224,255,0.5);
+}
+#notification.success { background: linear-gradient(135deg, #00e0ff, #6a5acd); }
+#notification.error { background: linear-gradient(135deg, #ff4c4c, #ff0000); }
 </style>
 </head>
 <body>
+
 <div class="container">
+  <div id="notification"></div>
   <h2>Введите сумму депозита</h2>
   <input type="number" id="depositAmount" placeholder="Сумма">
   <button id="depositBtn">Запустить</button>
@@ -59,11 +81,22 @@ button:hover {
 <script>
 const depositBtn = document.getElementById('depositBtn');
 const depositInput = document.getElementById('depositAmount');
+const notification = document.getElementById('notification');
+
+function showNotification(message, type="success") {
+  notification.textContent = message;
+  notification.className = '';
+  notification.classList.add(type);
+  notification.style.display = 'block';
+  setTimeout(() => {
+    notification.style.display = 'none';
+  }, 3000);
+}
 
 depositBtn.addEventListener('click', async () => {
   const amount = parseFloat(depositInput.value);
   if (!amount || amount <= 0) {
-    alert("Введите сумму депозита");
+    showNotification("Введите сумму депозита", "error");
     return;
   }
 
@@ -76,22 +109,28 @@ depositBtn.addEventListener('click', async () => {
       body: JSON.stringify({amount})
     });
 
+    if(!res.ok){
+      showNotification("Ошибка сервера", "error");
+      return;
+    }
+
     const data = await res.json();
 
     if (data.success) {
-      alert('Операция успешно прошла!');
+      showNotification('Операция успешно прошла!', "success");
       depositInput.value = '';
     } else {
-      alert(data.message);
+      showNotification(data.message || "Ошибка", "error");
     }
 
   } catch(err) {
     console.error(err);
-    alert('Ошибка сервера');
+    showNotification('Ошибка сервера', "error");
   } finally {
     depositBtn.textContent = 'Запустить';
   }
 });
 </script>
+
 </body>
 </html>
