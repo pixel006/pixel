@@ -412,7 +412,7 @@ app.get('/history', async (req, res) => {
 });
 
 // =======================
-// --- Группа пользователя ---
+// --- Страница группы ---
 // =======================
 app.get('/group', async (req, res) => {
     try {
@@ -422,14 +422,16 @@ app.get('/group', async (req, res) => {
         const user = await User.findById(req.session.userId);
         if (!user) return res.redirect('/login');
 
-        const groupMembers = await User.find({ referredBy: user.referralCode });
+        // Например, подгружаем всех рефералов этого пользователя
+        const referrals = await User.find({ referredBy: user.referralCode });
 
-        res.render('group', { currentUser: user, groupMembers });
+        res.render('group', { currentUser: user, referrals });
     } catch (err) {
         console.error('Ошибка GET /group:', err);
-        res.status(500).send('Ошибка сервера');
+        res.status(500).send('Внутренняя ошибка сервера');
     }
 });
+
 
 // =======================
 // --- Запуск сервера ---
