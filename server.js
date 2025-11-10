@@ -193,7 +193,7 @@ app.get('/deposit', async (req, res) => {
         res.render('deposit', { currentUser: user, error: null, canDeposit });
     } catch (err) {
         console.error('Ошибка GET /deposit:', err);
-        res.status(500).send('Ошибка сервера');
+        res.render('deposit', { currentUser: null, error: 'Ошибка загрузки страницы депозита', canDeposit: false });
     }
 });
 
@@ -207,7 +207,7 @@ app.post('/start-deposit', async (req, res) => {
 
         if (!numericAmount || numericAmount <= 0) return res.json({ success: false, message: 'Введите корректную сумму' });
         if (numericAmount < 50) return res.json({ success: false, message: 'Минимальная сумма депозита — 50$' });
-        if (numericAmount > user.balance) return res.json({ success: false, message: 'Недостаточно средств' });// --- Проверка: депозит только раз в 30 дней, если активный ---
+        if (numericAmount > user.balance) return res.json({ success: false, message: 'Недостаточно средств' });// --- Проверка: депозит только раз в 30 дней ---
         const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
         if (lastDeposit && lastDeposit.status === 'active') {
             const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
@@ -268,12 +268,12 @@ app.post('/start-deposit', async (req, res) => {
 
     } catch (err) {
         console.error('Ошибка POST /start-deposit:', err);
-        res.status(500).json({ success: false, message: 'Ошибка сервера' });
+        res.json({ success: false, message: 'Ошибка при запуске депозита, попробуйте позже' });
     }
 });
 
 // =======================
-// --- Остальные роуты (group, history, admin) ---
+// --- Group / History ---
 // =======================
 app.get('/group', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
@@ -290,7 +290,9 @@ app.get('/history', async (req, res) => {
     res.render('history', { currentUser, deposits, transactions });
 });
 
-// --- Админка, пополнение и вывод ---
+// =======================
+// --- Админка и операции ---
+// =======================
 app.get('/admin', async (req, res) => {
     const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
     if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
