@@ -10,10 +10,56 @@
 body {
   margin: 0;
   font-family: "Inter", "Segoe UI", Roboto, sans-serif;
-  background: #101222;
+  background: #0c0f24;
   color: #fff;
   overflow-x: hidden;
 }
+
+/* Hero Section */
+.hero {
+  position: relative;
+  text-align: center;
+  padding: 140px 20px 160px;
+  overflow: hidden;
+  background: linear-gradient(to bottom right, #0a1040, #101630);
+}
+.hero h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+.hero p {
+  font-size: 1.2rem;
+  color: #d0d0ff;
+  margin-bottom: 40px;
+}
+.hero a {
+  display: inline-block;
+  background: linear-gradient(135deg, #00e0ff, #6a5acd);
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(0,224,255,0.4);
+  transition: 0.3s;
+}
+.hero a:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 35px rgba(0,224,255,0.6);
+}
+.hero::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 120%;
+  height: 180px;
+  background: linear-gradient(to top, #0c0f24 20%, transparent);
+  z-index: 5;
+}
+
+/* Registration Box */
 .container {
   background: rgba(20, 20, 40, 0.95);
   padding: 30px;
@@ -22,9 +68,13 @@ body {
   width: 90%;
   max-width: 420px;
   text-align: center;
-  margin: 0 auto;
+  margin: -100px auto 80px;
   position: relative;
   z-index: 10;
+}
+
+input, button {
+  outline: none;
 }
 input[type="text"],
 input[type="number"],
@@ -75,81 +125,43 @@ p a {
 p a:hover {
   text-decoration: underline;
 }
-.hero {
-  position: relative;
-  text-align: center;
-  color: white;
-  padding: 120px 20px 80px;
-  overflow: hidden;
-}
-.hero h1 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 20px;
-}
-.hero p {
-  font-size: 1.2rem;
-  color: #d0d0ff;
-  margin-bottom: 30px;
-}
-.hero a {
-  display: inline-block;
-  background: linear-gradient(135deg, #00e0ff, #6a5acd);
-  color: #fff;
-  font-weight: 600;
-  padding: 12px 28px;
-  border-radius: 16px;
-  box-shadow: 0 0 25px rgba(0,224,255,0.4);
-  transition: 0.3s;
-}
-.hero a:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 35px rgba(0,224,255,0.6);
+
+/* Canvas Blur */
+canvas {
+  filter: blur(2px);
 }
 </style>
 </head>
 
 <body>
+
 <!-- Hero Section -->
-<section class="hero bg-gradient-to-r from-blue-900 to-indigo-800 relative overflow-hidden">
+<section class="hero">
   <div class="max-w-3xl mx-auto relative z-10">
     <h1>Это место, где деньги работают за вас.</h1>
     <p>
       Регистрируйтесь, инвестируйте и зарабатывайте легко каждый день. <br>
-      Начни сегодня — и пусть твой баланс растёт сам! 🚀
+      Начни сегодня — и пусть твой баланс растёт сам! 
     </p>
   </div>
 
-  <!-- Фон: график курса доллара -->
+  <!-- Фон: График доллара -->
   <div class="absolute inset-0 opacity-25">
     <canvas id="usdChart"></canvas>
   </div>
 </section>
 
 <!-- Registration Form -->
-<div class="container mt-[-60px] mb-10">
+<div class="container">
   <h1>Регистрация</h1>
-
-  <% if (typeof error !== 'undefined' && error) { %>
-    <p class="error"><%= error %></p>
-  <% } %>
-
   <form action="/register" method="POST">
     <input type="text" name="name" placeholder="Имя" required>
     <input type="number" name="age" placeholder="Возраст" min="18" required>
     <input type="email" name="email" placeholder="Email" required>
     <input type="password" name="password" placeholder="Пароль" required>
-
-    <% const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null; %>
-    <% if (!adminEmail) { %>
-      <input type="text" name="referralCode" id="referralCode" placeholder="Реферальный код" required>
-    <% } else { %>
-      <input type="text" name="referralCode" id="referralCode" placeholder="Реферальный код">
-    <% } %>
-
+    <input type="text" name="referralCode" id="referralCode" placeholder="Реферальный код">
     <button type="submit">Зарегистрироваться</button>
   </form>
-
   <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
 </div>
 
@@ -157,19 +169,22 @@ p a:hover {
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 const ctx = document.getElementById('usdChart').getContext('2d');
-const baseRates = [30.4, 29.4, 31.1, 32.8, 38.6, 61.3, 67.0, 58.3, 62.5, 64.7, 72.1, 73.7, 68.5, 83.2, 89.6, 94.3];
 
-let dynamicRates = [...baseRates];
-let direction = 1;const chart = new Chart(ctx, {
+// Реальные ориентиры курса доллара (2010–2025)
+const usdRates = [30.4, 29.4, 31.1, 32.8, 38.6, 61.3, 67.0, 58.3, 62.5, 64.7, 72.1, 73.7, 68.5, 83.2, 89.6, 94.3];const chart = new Chart(ctx, {
   type: 'line',
   data: {
-    labels: Array.from({ length: dynamicRates.length }, (_, i) => 2010 + i),
+    labels: Array.from({ length: usdRates.length }, (_, i) => 2010 + i),
     datasets: [{
-      data: dynamicRates,
+      data: usdRates,
       borderColor: '#00ffcc',
-      borderWidth: 3,
+      borderWidth: 2,
       fill: false,
-      tension: 0.3,
+      tension: 0.4,
+      shadowOffsetX: 0,
+      shadowOffsetY: 0,
+      shadowBlur: 15,
+      shadowColor: '#00ffff'
     }]
   },
   options: {
@@ -182,13 +197,33 @@ let direction = 1;const chart = new Chart(ctx, {
   }
 });
 
-// 🔹 "Живое" движение графика
-setInterval(() => {
-  dynamicRates = dynamicRates.map(v => v + (Math.random() - 0.5) * 0.2 * direction);
-  direction *= Math.random() > 0.97 ? -1 : 1;
-  chart.data.datasets[0].data = dynamicRates;
-  chart.update('none');
-}, 120);
+// 🔹 Эффект "бегущего света" по графику
+const canvas = document.getElementById('usdChart');
+const ctxGlow = canvas.getContext('2d');
+let progress = 0;
+function animateGlow() {
+  const chartArea = chart.chartArea;
+  const meta = chart.getDatasetMeta(0);
+  const points = meta.data;
+  if (!points.length) return;
+
+  const point = points[Math.floor(progress)];
+  if (point) {
+    ctxGlow.save();
+    ctxGlow.beginPath();
+    const gradient = ctxGlow.createRadialGradient(point.x, point.y, 0, point.x, point.y, 40);
+    gradient.addColorStop(0, 'rgba(0,255,255,0.7)');
+    gradient.addColorStop(1, 'rgba(0,255,255,0)');
+    ctxGlow.fillStyle = gradient;
+    ctxGlow.fillRect(chartArea.left, chartArea.top, chartArea.right - chartArea.left, chartArea.bottom - chartArea.top);
+    ctxGlow.restore();
+  }
+
+  progress += 0.05;
+  if (progress >= points.length) progress = 0;
+  requestAnimationFrame(animateGlow);
+}
+animateGlow();
 </script>
 
 <script>
