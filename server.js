@@ -187,7 +187,8 @@ app.get('/deposit', async (req, res) => {
         const user = await User.findById(req.session.userId);
 
         const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-        const canDeposit = !lastDeposit || ((new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24) >= 30);
+        const canDeposit = !lastDeposit || lastDeposit.status === 'completed' 
+            ((new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24) >= 30);
 
         res.render('deposit', { currentUser: user, error: null, canDeposit });
     } catch (err) {
@@ -206,10 +207,9 @@ app.post('/start-deposit', async (req, res) => {
 
         if (!numericAmount || numericAmount <= 0) return res.json({ success: false, message: 'Введите корректную сумму' });
         if (numericAmount < 50) return res.json({ success: false, message: 'Минимальная сумма депозита — 50$' });
-        if (numericAmount > user.balance) return res.json({ success: false, message: 'Недостаточно средств' });
-
-        // --- Проверка: депозит только раз в 30 дней ---const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-        if (lastDeposit) {
+        if (numericAmount > user.balance) return res.json({ success: false, message: 'Недостаточно средств' });// --- Проверка: депозит только раз в 30 дней, если активный ---
+        const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
+        if (lastDeposit && lastDeposit.status === 'active') {
             const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
             if (daysSinceLast < 30) {
                 return res.json({
@@ -252,7 +252,7 @@ app.post('/start-deposit', async (req, res) => {
         user.transactions.push({
             type: 'interest',
             amount: firstInterest,
-            description: `Начислено ${firstInterest.toFixed(2)}$ при запуске депозита,
+            description: `Начислено ${firstInterest.toFixed(2)}$ при запуске депозита`,
             date: new Date(),
             status: 'completed'
         });
@@ -262,7 +262,7 @@ app.post('/start-deposit', async (req, res) => {
 
         res.json({
             success: true,
-            message: Депозит на $${numericAmount} запущен! Начислено ${firstInterest.toFixed(2)}$.`,
+            message: `Депозит на $${numericAmount} запущен! Начислено ${firstInterest.toFixed(2)}$.`,
             newBalance: user.balance
         });
 
@@ -273,118 +273,56 @@ app.post('/start-deposit', async (req, res) => {
 });
 
 // =======================
-// --- Group ---
+// --- Остальные роуты (group, history, admin) ---
 // =======================
 app.get('/group', async (req, res) => {
-    try {
-        if (!req.session.userId) return res.redirect('/login');
-        if (req.session.userId === "admin") return res.redirect('/admin');
-
-        const currentUser = await User.findById(req.session.userId);
-        const team = await User.find({ referredBy: currentUser.referralCode });
-        res.render('group', { currentUser, team, request: req });
-    } catch (err) {
-        console.error('Ошибка GET /group:', err);
-        res.status(500).send('Ошибка сервера');
-    }
+    if (!req.session.userId) return res.redirect('/login');
+    const currentUser = await User.findById(req.session.userId);
+    const team = await User.find({ referredBy: currentUser.referralCode });
+    res.render('group', { currentUser, team, request: req });
 });
 
-// =======================
-// --- History ---
-// =======================
 app.get('/history', async (req, res) => {
-    try {
-        if (!req.session.userId) return res.redirect('/login');
-        const currentUser = await User.findById(req.session.userId);
-        const deposits = await Deposit.find({ userId: currentUser._id });
-        const transactions = currentUser.transactions || [];
-        res.render('history', { currentUser, deposits, transactions });
-    } catch (err) {
-        console.error('Ошибка GET /history:', err);
-        res.status(500).send('Ошибка сервера');
-    }
+    if (!req.session.userId) return res.redirect('/login');
+    const currentUser = await User.findById(req.session.userId);
+    const deposits = await Deposit.find({ userId: currentUser._id });
+    const transactions = currentUser.transactions || [];
+    res.render('history', { currentUser, deposits, transactions });
 });
 
-// =======================
-// --- Админ-панель ---
-// =======================
+// --- Админка, пополнение и вывод ---
 app.get('/admin', async (req, res) => {
-    try {
-        const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-        if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
-            return res.status(403).send('Доступ запрещён');
-        }
-
-        const users = await User.find();
-        res.render('admin', { users });
-    } catch (err) {
-        console.error('Ошибка GET /admin:', err);
-        res.status(500).send('Ошибка сервера');
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+    if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
+        return res.status(403).send('Доступ запрещён');
     }
-});// =======================
-// --- Пополнение и вывод через админку ---
-// =======================
-app.post('/admin/deposit/:id', async (req, res) => {
-    try {
-        const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-        if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
-            return res.status(403).json({ success: false, message: 'Доступ запрещён' });
-        }
-
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
-
-        const amount = parseFloat(req.body.amount);
-        if (!amount || amount <= 0) return res.status(400).json({ success: false, message: 'Введите корректную сумму' });
-
-        user.balance += amount;
-        if (!user.transactions) user.transactions = [];
-        user.transactions.push({
-            type: 'deposit',
-            amount,
-            description: `Пополнение админом ${amount}$`,
-            date: new Date(),
-            status: 'completed'
-        });
-
-        await user.save();
-        res.json({ success: true, message: `Счёт пользователя пополнен на $${amount}` });
-    } catch (err) {
-        console.error('Ошибка POST /admin/deposit/:id:', err);
-        res.status(500).json({ success: false, message: 'Ошибка сервера' });
-    }
+    const users = await User.find();
+    res.render('admin', { users });
 });
 
-app.post('/admin/withdraw/:id', async (req, res) => {
-    try {
-        const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-        if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
-            return res.status(403).json({ success: false, message: 'Доступ запрещён' });
-        }
-
-        const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
-
-        const amount = parseFloat(req.body.amount);
-        if (!amount || amount <= 0) return res.status(400).json({ success: false, message: 'Введите корректную сумму' });
-        if (user.balance < amount) return res.status(400).json({ success: false, message: 'Недостаточно средств' });
-
-        user.balance -= amount;
-        if (!user.transactions) user.transactions = [];
-        user.transactions.push({
-            type: 'withdraw',
-            amount,
-            description: `Вывод админом ${amount}$`,
-            date: new Date(),
-            status: 'completed'
-        });
-
-        await user.save();
-        res.json({ success: true, message: `Со счёта пользователя выведено $${amount}` });
-    } catch (err) {
-        console.error('Ошибка POST /admin/withdraw/:id:', err);
-        res.status(500).json({ success: false, message: 'Ошибка сервера' });
+app.post('/admin/deposit/:id', async (req, res) => {
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+    if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
+        return res.status(403).json({ success: false, message: 'Доступ запрещён' });
     }
+    const user = await User.findById(req.params.id);
+    const amount = parseFloat(req.body.amount);
+    user.balance += amount;
+    user.transactions.push({ type: 'deposit', amount, description: `Пополнение админом`, date: new Date(), status: 'completed' });
+    await user.save();
+    res.json({ success: true, message: `Баланс пополнен на ${amount}$` });
+});app.post('/admin/withdraw/:id', async (req, res) => {
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+    if (!req.session.userId || req.session.userEmail.toLowerCase() !== adminEmail) {
+        return res.status(403).json({ success: false, message: 'Доступ запрещён' });
+    }
+    const user = await User.findById(req.params.id);
+    const amount = parseFloat(req.body.amount);
+    if (user.balance < amount) return res.status(400).json({ success: false, message: 'Недостаточно средств' });
+    user.balance -= amount;
+    user.transactions.push({ type: 'withdraw', amount, description: `Вывод админом`, date: new Date(), status: 'completed' });
+    await user.save();
+    res.json({ success: true, message: `Выведено ${amount}$` });
 });
 
 // =======================
