@@ -3,27 +3,33 @@ const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
 const methodOverride = require('method-override');
+const cron = require('node-cron');
 const User = require('./models/User');
 const Deposit = require('./models/Deposit');
-const cron = require('node-cron');
 
 const app = express();
 
+// =======================
 // --- Настройки EJS и статики ---
+// =======================
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(methodOverride('_method'));
 app.use(express.static('public'));
 
+// =======================
 // --- Сессии ---
+// =======================
 app.use(session({
     secret: 'supersecretkey',
     resave: false,
     saveUninitialized: false
 }));
 
+// =======================
 // --- Подключение к MongoDB ---
+// =======================
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB connected ✅'))
     .catch(err => console.log('MongoDB connection error:', err));
@@ -173,7 +179,7 @@ app.get('/', async (req, res) => {
 });
 
 // =======================
-// --- Deposit ---
+// --- Deposit (1 раз в месяц) ---
 // =======================
 app.get('/deposit', async (req, res) => {
     try {
@@ -202,10 +208,18 @@ app.post('/start-deposit', async (req, res) => {
         if (numericAmount < 50) return res.json({ success: false, message: 'Минимальная сумма депозита — 50$' });
         if (numericAmount > user.balance) return res.json({ success: false, message: 'Недостаточно средств' });
 
-        const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-        if (lastDeposit && ((new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24) < 30)) {
-            return res.json({ success: false, message: 'Депозит можно делать только раз в месяц' });
-        }// --- Списываем депозит ---
+        // --- Проверка: депозит только раз в 30 дней ---const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
+        if (lastDeposit) {
+            const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
+            if (daysSinceLast < 30) {
+                return res.json({
+                    success: false,
+                    message: `Депозит можно делать только раз в месяц (через ${Math.ceil(30 - daysSinceLast)} дней)`
+                });
+            }
+        }
+
+        // --- Списываем депозит ---
         user.balance -= numericAmount;
 
         // --- Создаём депозит ---
@@ -238,7 +252,7 @@ app.post('/start-deposit', async (req, res) => {
         user.transactions.push({
             type: 'interest',
             amount: firstInterest,
-            description: `Начислено ${firstInterest.toFixed(2)}$ при запуске депозита`,
+            description: `Начислено ${firstInterest.toFixed(2)}$ при запуске депозита,
             date: new Date(),
             status: 'completed'
         });
@@ -248,7 +262,7 @@ app.post('/start-deposit', async (req, res) => {
 
         res.json({
             success: true,
-            message: `Депозит на $${numericAmount} запущен! Начислено ${firstInterest.toFixed(2)}$.`,
+            message: Депозит на $${numericAmount} запущен! Начислено ${firstInterest.toFixed(2)}$.`,
             newBalance: user.balance
         });
 
@@ -307,9 +321,7 @@ app.get('/admin', async (req, res) => {
         console.error('Ошибка GET /admin:', err);
         res.status(500).send('Ошибка сервера');
     }
-});
-
-// =======================
+});// =======================
 // --- Пополнение и вывод через админку ---
 // =======================
 app.post('/admin/deposit/:id', async (req, res) => {
@@ -320,7 +332,9 @@ app.post('/admin/deposit/:id', async (req, res) => {
         }
 
         const user = await User.findById(req.params.id);
-        if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });const amount = parseFloat(req.body.amount);
+        if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
+
+        const amount = parseFloat(req.body.amount);
         if (!amount || amount <= 0) return res.status(400).json({ success: false, message: 'Введите корректную сумму' });
 
         user.balance += amount;
