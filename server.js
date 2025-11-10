@@ -181,7 +181,7 @@ app.get('/', async (req, res) => {
 });
 
 // =======================
-// --- Deposit (1 раз в 30 дней для пользователя) ---
+// --- Deposit ---
 // =======================
 app.get('/deposit', async (req, res) => {
     try {
@@ -228,7 +228,6 @@ app.post('/start-deposit', async (req, res) => {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
         const sessionEmail = req.session.userEmail ? req.session.userEmail.toLowerCase() : null;
 
-        // --- Ограничение для обычных пользователей ---
         if (sessionEmail !== adminEmail) {
             const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
             if (lastDeposit) {
@@ -242,10 +241,8 @@ app.post('/start-deposit', async (req, res) => {
             }
         }
 
-        // --- Списываем депозит ---
         user.balance -= numericAmount;
 
-        // --- Создаем депозит ---
         const deposit = new Deposit({
             userId: user._id,
             principal: numericAmount,
@@ -256,7 +253,6 @@ app.post('/start-deposit', async (req, res) => {
             createdAt: new Date()
         });
 
-        // --- Начисляем первый процент ---
         const interestRate = 0.045;
         const firstInterest = numericAmount * interestRate;
         deposit.accrued += firstInterest;
@@ -294,7 +290,7 @@ app.post('/start-deposit', async (req, res) => {
 });
 
 // =======================
-// --- Админка, пополнение и вывод ---
+// --- Админка ---
 // =======================
 app.get('/admin', async (req, res) => {
     try {
@@ -374,6 +370,64 @@ app.post('/admin/withdraw/:id', async (req, res) => {
     } catch (err) {
         console.error('Ошибка /admin/withdraw:', err);
         res.status(500).json({ success: false, message: 'Ошибка сервера при выводе' });
+    }
+});
+
+// =======================
+// --- Logout ---
+// =======================
+app.get('/logout', (req, res) => {
+    req.session.destroy(err => {
+        if (err) {
+            console.error('Ошибка при выходе:', err);
+            return res.status(500).send('Ошибка сервера');
+        }
+        res.redirect('/login');
+    });
+});
+
+// =======================
+// --- История депозитов и транзакций ---
+// =======================
+app.get('/history', async (req, res) => {
+    try {
+        if (!req.session.userId) return res.redirect('/login');
+        if (req.session.userId === "admin") return res.redirect('/admin');
+
+        const user = await User.findById(req.session.userId);
+        if (!user) return res.redirect('/login');
+
+        const deposits = await Deposit.find({ userId: user._id }).sort({ createdAt: -1 });
+
+        const enrichedDeposits = deposits.map(dep => {
+            let daysLeft = dep.remainingDays;
+            return { ...dep.toObject(), daysLeft };
+        });
+
+        res.render('history', { currentUser: user, deposits: enrichedDeposits, transactions: user.transactions || [] });
+    } catch (err) {
+        console.error('Ошибка GET /history:', err);
+        res.status(500).send('Ошибка сервера');
+    }
+});
+
+// =======================
+// --- Группа пользователя ---
+// =======================
+app.get('/group', async (req, res) => {
+    try {
+        if (!req.session.userId) return res.redirect('/login');
+        if (req.session.userId === "admin") return res.redirect('/admin');
+
+        const user = await User.findById(req.session.userId);
+        if (!user) return res.redirect('/login');
+
+        const groupMembers = await User.find({ referredBy: user.referralCode });
+
+        res.render('group', { currentUser: user, groupMembers });
+    } catch (err) {
+        console.error('Ошибка GET /group:', err);
+        res.status(500).send('Ошибка сервера');
     }
 });
 
