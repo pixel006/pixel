@@ -79,12 +79,11 @@ p a:hover {
 
 /* glowing animation */
 .btn-login.glow {
-  box-shadow: 0 0 25px rgba(0,224,255,0.8);
+  box-shadow: 0 0 25px rgba(0,224,255,0.9);
   transform: scale(1.08);
-  transition: 0.3s;
 }
 
-/* SVG overlay styles */
+/* SVG overlay */
 .svg-overlay {
   position: absolute;
   left: 0;
@@ -107,7 +106,6 @@ p a:hover {
 .diode {
   fill: #00e0ff;
   filter: drop-shadow(0 0 6px #00e0ff);
-  transition: 0.3s;
 }
 .diode.pulse {
   animation: diodePulse 0.6s ease-in-out alternate;
@@ -139,123 +137,106 @@ p a:hover {
   </form>
 
   <p class="register-block">Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
-
   <div class="success-text" id="successText">Начало к твоему успеху</div>
 
   <!-- SVG overlay -->
-  <svg class="svg-overlay" id="svgOverlay" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+  <svg class="svg-overlay" id="svgOverlay" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <marker id="arrowMarker" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
         <path d="M2,2 L10,6 L2,10 Z" fill="#00e0ff" />
       </marker>
     </defs>
-
     <circle id="successCircle" cx="0" cy="0" r="0"
       stroke="rgba(0,224,255,0.16)" stroke-width="2.6"
-      fill="rgba(0,224,255,0.03)"/>
-
+      fill="rgba(0,224,255,0.03)" />
     <path id="basePath" class="path-base" d="" />
     <path id="glowPath" class="path-glow" d=""
-      marker-end="url(#arrowMarker)"
-      stroke-dasharray="6 8" stroke-dashoffset="0" />
-
-    <circle id="diode" class="diode" cx="0" cy="0" r="6"
-      style="visibility:hidden;" />
+      marker-end="url(#arrowMarker)" stroke-dasharray="6 8" stroke-dashoffset="0" />
+    <circle id="diode" class="diode" cx="0" cy="0" r="6" style="visibility:hidden;" />
   </svg>
 </div>
 
 <script>
 (function(){
-  const panel = document.getElementById('panel');
-  const successText = document.getElementById('successText');const registerBlock = document.querySelector('.register-block');
+  const successText = document.getElementById('successText');
+  const registerBlock = document.querySelector('.register-block');
   const btnLogin = document.getElementById('btnLogin');
   const svg = document.getElementById('svgOverlay');
   const basePath = document.getElementById('basePath');
   const glowPath = document.getElementById('glowPath');
   const successCircle = document.getElementById('successCircle');
-  const diode = document.getElementById('diode');
-
-  function buildPath() {
+  const diode = document.getElementById('diode');function buildPath() {
     const successRect = successText.getBoundingClientRect();
     const registerRect = registerBlock.getBoundingClientRect();
     const btnRect = btnLogin.getBoundingClientRect();
     const svgRect = svg.getBoundingClientRect();
-    const offsetX = svgRect.left;
-    const offsetY = svgRect.top;
+    const offsetX = svgRect.left, offsetY = svgRect.top;
 
     const startX = successRect.left + successRect.width / 2 - offsetX;
     const startY = successRect.top + successRect.height / 2 - offsetY;
     const endX = btnRect.left + btnRect.width / 2 - offsetX;
     const endY = btnRect.top + btnRect.height / 2 - offsetY;
+    const regY = registerRect.top - offsetY;
 
-    const radius = Math.max(successRect.width, successRect.height) / 2 + 22;
-    successCircle.setAttribute('cx', startX);
-    successCircle.setAttribute('cy', startY + 2);
-    successCircle.setAttribute('r', radius);
+    const radius = Math.max(successRect.width, successRect.height) / 2 + 18;
+    successCircle.setAttribute("cx", startX);
+    successCircle.setAttribute("cy", startY);
+    successCircle.setAttribute("r", radius);
 
-    const sy = startY + radius * 0.65;
-    const sx = startX;
-    const safeY = Math.min(registerRect.top - offsetY - 40, sy - 40);
-    const midX = (sx + endX) / 2;
-
+    // Линия: от круга — влево, вверх, потом плавно к кнопке
     const d = `
-      M ${sx} ${sy}
-      C ${sx + 40} ${safeY}, ${midX - 40} ${safeY - 20}, ${midX} ${safeY}
-      S ${endX - 40} ${safeY + 40}, ${endX} ${endY - 10}
+      M ${startX} ${startY + radius}
+      C ${startX - 120} ${regY - 20},
+        ${endX + 40} ${regY - 60},
+        ${endX} ${endY - 12}
     `;
 
-    basePath.setAttribute('d', d);
-    glowPath.setAttribute('d', d);
+    basePath.setAttribute("d", d);
+    glowPath.setAttribute("d", d);
 
     const pathLength = glowPath.getTotalLength();
-    const pt = glowPath.getPointAtLength(0);
-    diode.setAttribute('cx', pt.x);
-    diode.setAttribute('cy', pt.y);
-    diode.style.visibility = 'visible';
+    const startPt = glowPath.getPointAtLength(0);
+    diode.setAttribute("cx", startPt.x);
+    diode.setAttribute("cy", startPt.y);
+    diode.style.visibility = "visible";
 
     return { pathLength };
   }
 
-  let animFrame;
-  let startTime = null;
-  const duration = 2500;
-  let pathLen = 0;
-
   function startAnimation() {
-    cancelAnimationFrame(animFrame);
-    startTime = null;
-    const info = buildPath();
-    pathLen = info.pathLength;
-    diode.classList.remove('pulse');
-    btnLogin.classList.remove('glow');
+    cancelAnimationFrame(window.animFrame);
+    const { pathLength } = buildPath();
+    btnLogin.classList.remove("glow");
+    diode.classList.remove("pulse");
 
-    function step(ts) {
+    const duration = 2500;
+    let startTime;
+
+    function animate(ts) {
       if (!startTime) startTime = ts;
-      const progress = (ts - startTime) / duration;
-      const t = Math.min(progress, 1);
+      const t = Math.min((ts - startTime) / duration, 1);
       const eased = 1 - Math.pow(1 - t, 3);
-      const dist = eased * pathLen;
-      const pt = glowPath.getPointAtLength(dist);
-      diode.setAttribute('cx', pt.x);
-      diode.setAttribute('cy', pt.y);
+      const point = glowPath.getPointAtLength(eased * pathLength);
+      diode.setAttribute("cx", point.x);
+      diode.setAttribute("cy", point.y);
 
       if (t < 1) {
-        animFrame = requestAnimationFrame(step);
+        window.animFrame = requestAnimationFrame(animate);
       } else {
-        btnLogin.classList.add('glow');
-        diode.classList.add('pulse');
+        btnLogin.classList.add("glow");
+        diode.classList.add("pulse");
         setTimeout(() => {
-          btnLogin.classList.remove('glow');
-          diode.classList.remove('pulse');
-          setTimeout(startAnimation, 800);
-        }, 1000);
+          btnLogin.classList.remove("glow");
+          diode.classList.remove("pulse");
+          setTimeout(startAnimation, 1000);
+        }, 800);
       }
     }
-    animFrame = requestAnimationFrame(step);
+    window.animFrame = requestAnimationFrame(animate);
   }
 
-  window.addEventListener('load', () => setTimeout(startAnimation, 200));
-  window.addEventListener('resize', () => setTimeout(startAnimation, 500));
+  window.addEventListener("load", () => setTimeout(startAnimation, 200));
+  window.addEventListener("resize", () => setTimeout(startAnimation, 500));
 })();
 </script>
 </body>
