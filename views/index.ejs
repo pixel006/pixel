@@ -9,8 +9,8 @@
   --bg-dark: #06070a;
   --bg-panel: rgba(255, 255, 255, 0.03);
   --accent: #00e0ff;
-  --accent-glow: 0 0 24px #00e0ff88;
   --accent2: #6a5acd;
+  --accent-glow: 0 0 24px #00e0ff88;
   --text: #f0f4ff;
   --text-dim: #a0a5b8;
   --radius: 18px;
@@ -20,22 +20,48 @@
 }
 
 * { box-sizing: border-box; transition: all 0.25s ease; }
-body { margin: 0; font-family: var(--font-main); color: var(--text); background: radial-gradient(circle at 50% -30%, #101222, #040507 80%); min-height: 100vh; overflow-x: hidden; }
 
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  color: var(--text);
+  background: radial-gradient(circle at 50% -30%, #101222, #040507 80%);
+  min-height: 100vh;
+  overflow-x: hidden;
+  position: relative;
+  animation: bgPulse 10s infinite alternate;
+}
+
+/* Анимация фона */
+@keyframes bgPulse {
+  0% { background-position: 50% -30%; }
+  100% { background-position: 50% -35%; }
+}
+
+/* Плавающие $ */
+.dollar {
+  position: absolute;
+  color: rgba(0,224,255,0.5);
+  user-select: none;
+  pointer-events: none;
+}
+
+/* Меню */
 #menuToggle {
   position: fixed; top: 24px; left: 28px; width: 56px; height: 56px;
   border: none; border-radius: 50%; background: var(--bg-panel);
   backdrop-filter: blur(var(--blur)); color: var(--accent); font-size: 1.6em;
-  cursor: pointer; z-index: 2000; display: flex; align-items: center; justify-content: center;
+  cursor: pointer; z-index: 2000;
+  display: flex; align-items: center; justify-content: center;
   box-shadow: var(--accent-glow);
 }
-#menuToggle:hover { background: rgba(0, 224, 255, 0.15); transform: scale(1.05); }
+#menuToggle:hover { background: rgba(0,224,255,0.15); transform: scale(1.05); }
 
 aside.sidebar {
   position: fixed; top:0; left: -260px; width:260px; height:100vh;
   background: rgba(10,10,20,0.8); backdrop-filter: blur(30px);
-  display: flex; flex-direction: column; align-items: flex-start; padding: 120px 30px;
-  box-shadow: inset -1px 0 0 rgba(255,255,255,0.05);
+  display: flex; flex-direction: column; align-items: flex-start;
+  padding: 120px 30px; box-shadow: inset -1px 0 0 rgba(255,255,255,0.05);
   transition: left 0.4s cubic-bezier(0.7,0,0.2,1);
 }
 .sidebar.open { left:0; }
@@ -57,12 +83,16 @@ h1 {
   font-weight:600; letter-spacing:0.3px; margin-bottom:30px;
   background: linear-gradient(90deg,var(--accent), var(--accent2));
   -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  opacity: 0; transform: translateY(-30px);
+  animation: fadeUp 0.8s forwards 0.2s;
 }
 
 .balance-card {
   background: var(--bg-panel); backdrop-filter: blur(var(--blur));
   border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.05);
   padding: 32px 36px; max-width:420px; box-shadow: var(--shadow-soft); margin-bottom: 20px;
+  opacity: 0; transform: translateY(30px);
+  animation: fadeUp 0.8s forwards 0.4s;
 }
 .balance-card h2 { font-size:1.2em; color: var(--text-dim); margin-bottom:8px; }
 .balance-card p { font-size:2em; font-weight:600; color: var(--accent); text-shadow:0 0 18px rgba(0,224,255,0.5); }
@@ -71,9 +101,14 @@ h1 {
   flex:1; max-width:160px; text-align:center; text-decoration:none; color:#fff;
   font-weight:600; background: linear-gradient(135deg, var(--accent), var(--accent2));
   padding:14px 0; border-radius: var(--radius); cursor:pointer;
-  box-shadow: 0 0 20px 3px rgba(0,224,255,0.4); animation: glowPulse 2.5s infinite ease-in-out;
+  box-shadow: 0 0 20px 3px rgba(0,224,255,0.4); animation: glowPulse 2.5s infinite ease-in-out, fadeUp 0.8s forwards 0.6s;
+  opacity: 0;
 }
 #startBtn:hover { transform: scale(1.05); box-shadow:0 0 25px 6px rgba(0,224,255,0.5); }
+
+@keyframes fadeUp {
+  to { opacity: 1; transform: translateY(0); }
+}
 @keyframes glowPulse { 0%,100% { box-shadow:0 0 10px rgba(0,224,255,0.4);} 50%{ box-shadow:0 0 25px rgba(0,224,255,0.8);} }
 
 nav.fixed-footer {
@@ -140,6 +175,43 @@ if(startBtn){
         window.open('/deposit', '_blank'); 
     });
 }
+
+/* 💸 Плавающие $ с параллаксом, колебанием и вращением */
+const layers = [
+  { speed: 4, size: [18,24], opacity: [0.4,0.7], sway: 15 },
+  { speed: 6, size: [14,20], opacity: [0.3,0.6], sway: 10 },
+  { speed: 8, size: [10,16], opacity: [0.2,0.5], sway: 6 }
+];
+
+function spawnDollar() {
+  const layer = layers[Math.floor(Math.random()*layers.length)];
+  const dollar = document.createElement("div");
+  dollar.classList.add("dollar");
+  dollar.textContent = "$";
+  dollar.style.left = Math.random()*100 + "vw";
+  dollar.style.top = (Math.random()*20 + 80) + "vh";
+  dollar.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
+  dollar.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
+  dollar.style.zIndex = 1;
+
+  // Ротация и колебание
+  const startRotation = Math.random()*360;
+  const rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
+  const start = Date.now();
+  function animateDollar() {
+    const elapsed = (Date.now() - start)/1000;
+    const offsetX = Math.sin(elapsed * 2 * Math.PI / layer.speed) * layer.sway;
+    const rotation = startRotation + elapsed*rotationSpeed;
+    dollar.style.transform = `translateX(${offsetX}px) rotate(${rotation}deg)`;
+    requestAnimationFrame(animateDollar);
+  }
+  animateDollar();
+
+  document.body.appendChild(dollar);
+  setTimeout(() => dollar.remove(), layer.speed*1000 + 1000);
+}
+
+setInterval(spawnDollar, 500);
 </script>
 
 </body>
