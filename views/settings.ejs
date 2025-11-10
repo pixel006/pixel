@@ -15,6 +15,8 @@ body {
     align-items: center;
     justify-content: flex-start;
     padding-top: 60px;
+    overflow-x: hidden;
+    position: relative;
 }
 
 h1 {
@@ -72,14 +74,12 @@ h1 {
     color: #0f0;
     margin-bottom: 10px;
     text-align: center;
-    text-shadow: 0 0 6px #0f0;
 }
 
 .error {
     color: #f00;
     margin-bottom: 10px;
     text-align: center;
-    text-shadow: 0 0 6px #f00;
 }
 
 a {
@@ -90,7 +90,16 @@ a {
 
 a:hover {
     color: #6a5acd;
-    text-shadow: 0 0 12px rgba(0,224,255,0.5);
+}
+
+/* ⚙️ однотонные силуэты */
+.gear {
+    position: absolute;
+    font-size: 24px;
+    color: #00e0ff; /* однотонный */
+    user-select: none;
+    pointer-events: none;
+    z-index: 0;
 }
 </style>
 </head>
@@ -111,5 +120,42 @@ a:hover {
     </form>
 </div>
 <p style="text-align:center; margin-top: 20px;"><a href="/">Вернуться на главную</a></p>
+
+<script>
+/* ⚙️ Плавающие однотонные символы */
+const layers = [
+  { speed: 4, size: [18,28], opacity: [0.4,0.7], sway: 15 },
+  { speed: 6, size: [14,24], opacity: [0.3,0.6], sway: 10 },
+  { speed: 8, size: [10,20], opacity: [0.2,0.5], sway: 6 }
+];
+
+function spawnGear() {
+    const layer = layers[Math.floor(Math.random()*layers.length)];
+    const gear = document.createElement("div");
+    gear.classList.add("gear");
+    gear.textContent = "⚙️";
+    gear.style.left = Math.random() * 100 + "vw";
+    gear.style.top = Math.random() * 100 + "vh";
+    gear.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
+    gear.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
+
+    const startRotation = Math.random()*360;
+    let rotationSpeed = (Math.random()*30 + 15) * (Math.random()<0.5?-1:1);
+    const start = Date.now();
+
+    function animateGear() {
+        const elapsed = (Date.now() - start)/1000;
+        const offsetX = Math.sin(elapsed*2*Math.PI/layer.speed) * layer.sway;
+        const rotation = startRotation + elapsed*rotationSpeed;
+        gear.style.transform = `translateX(${offsetX}px) rotate(${rotation}deg)`;
+        requestAnimationFrame(animateGear);
+    }
+    animateGear();
+    document.body.appendChild(gear);
+    setTimeout(()=>gear.remove(), layer.speed*1000 + 1500);
+}
+
+setInterval(spawnGear, 400);
+</script>
 </body>
 </html>

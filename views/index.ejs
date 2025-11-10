@@ -20,6 +20,7 @@
 }
 
 * { box-sizing: border-box; transition: all 0.25s ease; }
+
 body {
   margin: 0;
   font-family: var(--font-main);
@@ -37,7 +38,7 @@ body {
   100% { background-position: 50% -35%; }
 }
 
-/* Доллары */
+/* Символы $ */
 .dollar {
   position: absolute;
   font-size: 22px;
@@ -177,7 +178,7 @@ if(startBtn){
     });
 }
 
-/* 💸 Плавающие $ с параллаксом, колебанием и вращением по всей странице */
+/* 💸 Плавающие $ по всей странице, пересекают нижний бар, бар фиксирован */
 const layers = [
   { speed: 4, size: [18,24], opacity: [0.4,0.7], sway: 15 },
   { speed: 6, size: [14,20], opacity: [0.3,0.6], sway: 10 },
@@ -190,10 +191,10 @@ function spawnDollar() {
   dollar.classList.add("dollar");
   dollar.textContent = "$";
   dollar.style.left = Math.random()*100 + "vw";
-  dollar.style.top = Math.random()*100 + "vh"; // по всей высоте страницы
+  dollar.style.top = Math.random()*100 + "vh"; // по всей высоте
   dollar.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
   dollar.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
-  dollar.style.zIndex = 1;
+  dollar.style.zIndex = 0; // чтобы не перекрывало интерфейс сверху
 
   const startRotation = Math.random()*360;
   let rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
