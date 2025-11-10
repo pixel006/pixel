@@ -205,6 +205,9 @@ app.get('/deposit', async (req, res) => {
     }
 });
 
+// =======================
+// --- Запуск депозита ---
+// =======================
 app.post('/start-deposit', async (req, res) => {
     try {
         if (!req.session.userId)
@@ -279,7 +282,7 @@ app.post('/start-deposit', async (req, res) => {
 
         res.json({
             success: true,
-            message: `Депозит на $${numericAmount} запущен! Начислено ${firstInterest.toFixed(2)}$.`,
+            message: `Депозит на $${numericAmount} запущен! Начислено ${firstInterest.toFixed(2)}$`,
             newBalance: user.balance
         });
 
@@ -308,6 +311,9 @@ app.get('/admin', async (req, res) => {
     }
 });
 
+// =======================
+// --- Пополнение/Вывод админом ---
+// =======================
 app.post('/admin/deposit/:id', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
@@ -327,7 +333,7 @@ app.post('/admin/deposit/:id', async (req, res) => {
         user.transactions.push({
             type: 'deposit',
             amount,
-            description: `Пополнение админом`,
+            description: 'Пополнение админом',
             date: new Date(),
             status: 'completed'
         });
@@ -360,7 +366,7 @@ app.post('/admin/withdraw/:id', async (req, res) => {
         user.transactions.push({
             type: 'withdraw',
             amount,
-            description: `Вывод админом`,
+            description: 'Вывод админом',
             date: new Date(),
             status: 'completed'
         });
@@ -398,13 +404,13 @@ app.get('/history', async (req, res) => {
         if (!user) return res.redirect('/login');
 
         const deposits = await Deposit.find({ userId: user._id }).sort({ createdAt: -1 });
+        const enrichedDeposits = deposits.map(dep => ({ ...dep.toObject(), daysLeft: dep.remainingDays }));
 
-        const enrichedDeposits = deposits.map(dep => {
-            let daysLeft = dep.remainingDays;
-            return { ...dep.toObject(), daysLeft };
+        res.render('history', {
+            currentUser: user,
+            deposits: enrichedDeposits,
+            transactions: user.transactions || []
         });
-
-        res.render('history', { currentUser: user, deposits: enrichedDeposits, transactions: user.transactions || [] });
     } catch (err) {
         console.error('Ошибка GET /history:', err);
         res.status(500).send('Ошибка сервера');
@@ -422,16 +428,17 @@ app.get('/group', async (req, res) => {
         const user = await User.findById(req.session.userId);
         if (!user) return res.redirect('/login');
 
-        // Например, подгружаем всех рефералов этого пользователя
         const referrals = await User.find({ referredBy: user.referralCode });
 
-        res.render('group', { currentUser: user, referrals });
+        res.render('group', {
+            currentUser: user,
+            referrals: referrals || []
+        });
     } catch (err) {
         console.error('Ошибка GET /group:', err);
         res.status(500).send('Внутренняя ошибка сервера');
     }
 });
-
 
 // =======================
 // --- Запуск сервера ---
