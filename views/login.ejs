@@ -18,7 +18,7 @@ body {
 }
 .container {
   background: rgba(20, 20, 40, 0.95);
-  padding: 40px 30px;
+  padding: 40px 30px 80px;
   border-radius: 16px;
   box-shadow: 0 0 32px rgba(0,224,255,0.4);
   width: 90%;
@@ -28,15 +28,8 @@ body {
   overflow: visible;
 }
 h1 {
-  margin-bottom: 10px;
+  margin-bottom: 20px;
   color: #00e0ff;
-}
-.slogan {
-  font-size: 1.2em;
-  color: #b0bfff;
-  margin-bottom: 30px;
-  font-weight: 500;
-  position: relative;
 }
 input[type="email"],
 input[type="password"] {
@@ -57,7 +50,7 @@ button {
   width: 80%;
   max-width: 250px;
   padding: 12px 0;
-  margin: 20px auto;
+  margin: 15px auto;
   background: linear-gradient(135deg, #00e0ff, #6a5acd);
   border: none;
   border-radius: 12px;
@@ -74,6 +67,9 @@ button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px rgba(0,224,255,0.6);
 }
+p {
+  margin-top: 10px;
+}
 p a {
   color: #00e0ff;
   text-decoration: none;
@@ -81,54 +77,53 @@ p a {
 p a:hover {
   text-decoration: underline;
 }
-.line-svg {
+.success-text {
   position: absolute;
-  top: 20px;
+  bottom: 15px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 1.1em;
+  color: #00e0ff;
+  font-weight: 500;
+  z-index: 10;
+  text-shadow: 0 0 10px rgba(0,224,255,0.6);
+}
+.svg-line {
+  position: absolute;
+  bottom: 0;
   left: 0;
   width: 100%;
-  height: 100%;
-  overflow: visible;
+  height: 250px;
   pointer-events: none;
+  overflow: visible;
   z-index: 1;
 }
 path {
   fill: none;
-  stroke: rgba(0,224,255,0.4);
-  stroke-width: 2;
+  stroke-width: 2.5;
   stroke-linecap: round;
+}
+path.base {
+  stroke: rgba(0,224,255,0.2);
 }
 path.glow {
   stroke: #00e0ff;
-  stroke-width: 3;
   filter: drop-shadow(0 0 6px #00e0ff);
-  stroke-dasharray: 5 10;
-  animation: dashmove 3s linear infinite;
+  stroke-dasharray: 8 10;
+  animation: dashmove 4s linear infinite;
 }
 @keyframes dashmove {
-  to {
-    stroke-dashoffset: -30;
-  }
+  to { stroke-dashoffset: -40; }
+}
+marker#arrow {
+  fill: #00e0ff;
+  filter: drop-shadow(0 0 4px #00e0ff);
 }
 </style>
 </head>
 <body>
 <div class="container">
   <h1>Вход</h1>
-  <div class="slogan">Начало к твоему успеху</div>
-
-  <!-- Анимированная линия -->
-  <svg class="line-svg" viewBox="0 0 420 320" preserveAspectRatio="none">
-    <path d="M50,30 
-             Q100,60 120,120 
-             T180,190 
-             Q210,230 250,260 
-             T360,290" stroke="rgba(0,224,255,0.2)" stroke-width="2"/>
-    <path class="glow" d="M50,30 
-             Q100,60 120,120 
-             T180,190 
-             Q210,230 250,260 
-             T360,290"/>
-  </svg>
 
   <form action="/login" method="POST">
     <input type="email" name="email" placeholder="Email" required>
@@ -137,6 +132,43 @@ path.glow {
   </form>
 
   <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+
+  <div class="success-text">Начало к твоему успеху</div>
+
+  <!-- SVG линия -->
+  <svg class="svg-line" viewBox="0 0 420 250" preserveAspectRatio="none">
+    <defs>
+      <marker id="arrow" markerWidth="8" markerHeight="8" refX="5" refY="3" orient="auto">
+        <path d="M0,0 L6,3 L0,6 Z" />
+      </marker>
+    </defs>
+    <!-- Круг вокруг текста -->
+    <circle cx="210" cy="230" r="25" stroke="rgba(0,224,255,0.3)" stroke-width="2" fill="none"/>
+    <!-- Основная линия -->
+    <path class="base" d="M210,205 
+        Q180,160 140,160 
+        T100,180 
+        Q80,190 90,210 
+        T200,235 
+        Q280,220 320,180 
+        T370,120 
+        Q390,100 360,80 
+        T300,60 
+        Q280,70 260,100 
+        T250,130" />
+    <!-- Светящаяся анимированная линия со стрелкой -->
+    <path class="glow" d="M210,205 
+        Q180,160 140,160 
+        T100,180 
+        Q80,190 90,210 
+        T200,235 
+        Q280,220 320,180 
+        T370,120 
+        Q390,100 360,80 
+        T300,60 
+        Q280,70 260,100 
+        T250,130" marker-end="url(#arrow)" />
+  </svg>
 </div>
 </body>
 </html>
