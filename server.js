@@ -430,15 +430,18 @@ app.get('/group', async (req, res) => {
 
         const referrals = await User.find({ referredBy: user.referralCode });
 
+        // Передаем переменные, которые использует старый group.ejs
         res.render('group', {
             currentUser: user,
-            referrals: referrals || []
+            team: referrals || [], // group.ejs использует team
+            request: req          // group.ejs использует request для ссылки
         });
     } catch (err) {
         console.error('Ошибка GET /group:', err);
         res.status(500).send('Внутренняя ошибка сервера');
     }
 });
+
 
 // =======================
 // --- Запуск сервера ---

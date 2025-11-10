@@ -64,9 +64,15 @@ button:hover {
   display: none;
   color: #fff;
   box-shadow: 0 0 20px rgba(0,224,255,0.5);
+  transition: opacity 0.3s ease;
+  opacity: 0;
 }
 #notification.success { background: linear-gradient(135deg, #00e0ff, #6a5acd); }
 #notification.error { background: linear-gradient(135deg, #ff4c4c, #ff0000); }
+#notification.show {
+  display: block;
+  opacity: 1;
+}
 </style>
 </head>
 <body>
@@ -76,7 +82,7 @@ button:hover {
   <h2>Введите сумму депозита</h2>
 
   <p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>
-  <input type="number" id="depositAmount" placeholder="Сумма" min="50" max="<%= currentUser.balance %>">
+  <input type="number" id="depositAmount" placeholder="Сумма" min="50" max="<%= currentUser.balance.toFixed(2) %>">
 
   <button id="depositBtn">Запустить</button>
 </div>
@@ -85,14 +91,15 @@ button:hover {
 const depositBtn = document.getElementById('depositBtn');
 const depositInput = document.getElementById('depositAmount');
 const notification = document.getElementById('notification');
-let userBalance = <%= currentUser.balance %>;
+let userBalance = parseFloat(<%= currentUser.balance.toFixed(2) %>);
 
 function showNotification(message, type = "success") {
   notification.textContent = message;
   notification.className = '';
-  notification.classList.add(type);
-  notification.style.display = 'block';
-  setTimeout(() => notification.style.display = 'none', 3000);
+  notification.classList.add(type, 'show');
+  setTimeout(() => {
+    notification.classList.remove('show');
+  }, 3000);
 }
 
 depositBtn.addEventListener('click', async () => {
@@ -121,14 +128,12 @@ depositBtn.addEventListener('click', async () => {
       body: JSON.stringify({ amount })
     });
 
-    if (!res.ok) {
-      throw new Error(`Ошибка HTTP: ${res.status}`);
-    }
+    if (!res.ok) throw new Error(`Ошибка HTTP: ${res.status}`);
 
     const data = await res.json();
 
     if (data.success) {
-      showNotification('Операция успешно прошла!', "success");
+      showNotification(`Депозит на $${amount} запущен! Начислено ${data.newBalance.toFixed(2)}$`, "success");
       depositInput.value = '';
       userBalance = data.newBalance;
     } else {
