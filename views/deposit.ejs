@@ -14,6 +14,8 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
+  overflow-x: hidden;
+  position: relative;
 }
 .container {
   background: rgba(20, 20, 40, 0.95);
@@ -72,6 +74,16 @@ button:hover {
 #notification.show {
   display: block;
   opacity: 1;
+}
+
+/* 💰 Плавающие однотонные монеты */
+.coin {
+  position: absolute;
+  font-size: 22px;
+  color: #00e0ff; /* однотонный цвет */
+  user-select: none;
+  pointer-events: none;
+  z-index: 1;
 }
 </style>
 </head>
@@ -133,7 +145,7 @@ depositBtn.addEventListener('click', async () => {
     const data = await res.json();
 
     if (data.success) {
-      showNotification(`Депозит на $${amount} запущен! Начислено ${data.newBalance.toFixed(2)}$`, "success");
+      showNotification(`Депозит на $${amount} запущен! Баланс: ${data.newBalance.toFixed(2)}$`, "success");
       depositInput.value = '';
       userBalance = data.newBalance;
     } else {
@@ -147,6 +159,42 @@ depositBtn.addEventListener('click', async () => {
     depositBtn.textContent = 'Запустить';
   }
 });
+
+/* 💰 Анимация плавающих монет */
+const layers = [
+  { speed: 4, size: [18,24], opacity: [0.4,0.7], sway: 15 },
+  { speed: 6, size: [14,20], opacity: [0.3,0.6], sway: 10 },
+  { speed: 8, size: [10,16], opacity: [0.2,0.5], sway: 6 }
+];
+
+function spawnCoin() {
+  const layer = layers[Math.floor(Math.random()*layers.length)];
+  const coin = document.createElement("div");
+  coin.classList.add("coin");
+  coin.textContent = "💰";
+  coin.style.left = Math.random()*100 + "vw";
+  coin.style.top = Math.random()*100 + "vh";
+  coin.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
+  coin.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
+
+  const startRotation = Math.random()*360;
+  let rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
+  let start = Date.now();
+
+  function animateCoin() {
+    const elapsed = (Date.now() - start)/1000;
+    const offsetX = Math.sin(elapsed * 2 * Math.PI / layer.speed) * layer.sway;
+    const rotation = startRotation + elapsed * rotationSpeed;
+    coin.style.transform = `translateX(${offsetX}px) rotate(${rotation}deg)`;
+    requestAnimationFrame(animateCoin);
+  }
+  animateCoin();
+
+  document.body.appendChild(coin);
+  setTimeout(() => coin.remove(), layer.speed*1000 + 1000);
+}
+
+setInterval(spawnCoin, 400);
 </script>
 
 </body>
