@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Личный кабинет — 2030</title>
+<title>Настройки — 2030</title>
 <style>
 :root {
   --bg-dark: #06070a;
@@ -37,27 +37,14 @@ main.content.shifted { margin-left:260px; }
 
 h1 { font-weight:600; letter-spacing:0.3px; margin-bottom:30px; background: linear-gradient(90deg,var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
 
-.balance-card { background: var(--bg-panel); backdrop-filter: blur(var(--blur)); border-radius: var(--radius); border: 1px solid rgba(255,255,255,0.05); padding: 32px 36px; max-width:420px; box-shadow: var(--shadow-soft); margin-bottom: 20px; }
-.balance-card h2 { font-size:1.2em; color: var(--text-dim); margin-bottom:8px; }
-.balance-card p { font-size:2em; font-weight:600; color: var(--accent); text-shadow:0 0 18px rgba(0,224,255,0.5); }
-
 /* Форма настроек */
-.settings-form { background: var(--bg-panel); backdrop-filter: blur(var(--blur)); border-radius: var(--radius); padding: 30px; max-width: 420px; margin-top: 20px; }
+.settings-form { background: var(--bg-panel); backdrop-filter: blur(var(--blur)); border-radius: var(--radius); padding: 30px; max-width: 420px; margin-top: 40px; }
 .settings-form input { width:100%; padding:12px; margin:8px 0; border-radius:12px; border:1px solid rgba(255,255,255,0.2); background: rgba(0,0,0,0.3); color:#fff; }
 .settings-form button { padding:12px 24px; border-radius:12px; border:none; background: linear-gradient(135deg,var(--accent),var(--accent2)); color:#000; cursor:pointer; font-weight:600; width:100%; margin-top:12px; }
 .success { color:#0f0; margin-bottom:10px; text-align:center; }
 .error { color:#f00; margin-bottom:10px; text-align:center; }
 
-/* START кнопка */
-#startBtn { flex:1; max-width:160px; text-align:center; text-decoration:none; color:#fff; font-weight:600; background: linear-gradient(135deg, var(--accent), var(--accent2)); padding:14px 0; border-radius: var(--radius); cursor:pointer; box-shadow: 0 0 20px 3px rgba(0,224,255,0.4); animation: glowPulse 2.5s infinite ease-in-out; }
-#startBtn:hover { transform: scale(1.05); box-shadow:0 0 25px 6px rgba(0,224,255,0.5); }
-@keyframes glowPulse { 0%,100% { box-shadow:0 0 10px rgba(0,224,255,0.4);} 50%{ box-shadow:0 0 25px rgba(0,224,255,0.8);} }
-
-nav.fixed-footer { position:fixed; bottom:0; left:0; width:100%; display:flex; justify-content:center; gap:18px; padding:20px; background: rgba(10,10,20,0.75); backdrop-filter: blur(20px); border-top:1px solid rgba(255,255,255,0.05); }
-nav.fixed-footer a { flex:1; max-width:160px; text-align:center; text-decoration:none; color: var(--text); font-weight:500; padding:14px 0; border-radius: var(--radius); background: var(--bg-panel); transition:0.3s; }
-nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); box-shadow: var(--accent-glow); }
-
-@media(max-width:600px){ main.content{padding:80px 24px;} .balance-card{padding:24px 28px;} nav.fixed-footer a{font-size:0.85em;max-width:120px;} }
+@media(max-width:600px){ main.content{padding:80px 24px;} .settings-form{padding:24px 28px;} }
 </style>
 </head>
 <body>
@@ -72,16 +59,8 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
 
 <main class="content" id="mainContent">
   <% if(currentUser){ %>
-    <h1>Добро пожаловать, <%= currentUser.name %></h1>
-    <div class="balance-card">
-      <h2>Баланс</h2>
-      <p>$<%= currentUser.balance.toFixed(2) %></p>
-    </div>
-    <p style="margin-top:30px;color:var(--text-dim);font-size:1.05em;">
-      Нажмите <b>START</b> для запуска депозита.
-    </p>
+    <h1>Настройки аккаунта, <%= currentUser.name %></h1>
 
-    <!-- Форма настройки пароля -->
     <div class="settings-form">
       <% if (typeof error !== 'undefined' && error) { %>
         <div class="error"><%= error %></div>
@@ -99,12 +78,6 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
   <% } %>
 </main>
 
-<nav class="fixed-footer">
-  <a href="/group">Группа</a>
-  <a id="startBtn">START</a>
-  <a href="/history">История</a>
-</nav>
-
 <script>
 const menuToggle = document.getElementById('menuToggle');
 const sidebar = document.getElementById('sidebar');
@@ -113,14 +86,6 @@ menuToggle.addEventListener('click', () => {
     sidebar.classList.toggle('open'); 
     mainContent.classList.toggle('shifted'); 
 });
-
-// Кнопка START — открывает /deposit
-const startBtn = document.getElementById('startBtn');
-if(startBtn){
-    startBtn.addEventListener('click', () => { 
-        window.open('/deposit', '_blank'); 
-    });
-}
 </script>
 
 </body>
