@@ -189,7 +189,14 @@ app.get('/deposit', async (req, res) => {
         const user = await User.findById(req.session.userId);
 
         const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-        const canDeposit = !lastDeposit || ((new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24) >= 30);
+        const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+        const sessionEmail = req.session.userEmail ? req.session.userEmail.toLowerCase() : null;
+        let canDeposit = true;
+
+        if (sessionEmail !== adminEmail && lastDeposit) {
+            const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
+            canDeposit = daysSinceLast >= 30;
+        }
 
         res.render('deposit', { currentUser: user, error: null, canDeposit });
     } catch (err) {
@@ -206,12 +213,22 @@ app.post('/start-deposit', async (req, res) => {
         const { amount } = req.body;
         const numericAmount = parseFloat(amount);
 
+        if (!numericAmount || numericAmount <= 0)
+            return res.json({ success: false, message: 'Введите корректную сумму' });
+
+        if (numericAmount < 50)
+            return res.json({ success: false, message: 'Минимальная сумма депозита — 50$' });
+
         const user = await User.findById(req.session.userId);
+        if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
+
+        if (numericAmount > user.balance)
+            return res.json({ success: false, message: 'Недостаточно средств' });
 
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
         const sessionEmail = req.session.userEmail ? req.session.userEmail.toLowerCase() : null;
 
-        // --- Для обычных пользователей проверка раз в 30 дней ---
+        // --- Ограничение для обычных пользователей ---
         if (sessionEmail !== adminEmail) {
             const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
             if (lastDeposit) {
@@ -225,17 +242,10 @@ app.post('/start-deposit', async (req, res) => {
             }
         }
 
-        if (!numericAmount || numericAmount <= 0)
-            return res.json({ success: false, message: 'Введите корректную сумму' });
-
-        if (numericAmount < 50)
-            return res.json({ success: false, message: 'Минимальная сумма депозита — 50$' });
-
-        if (numericAmount > user.balance)
-            return res.json({ success: false, message: 'Недостаточно средств' });
-
+        // --- Списываем депозит ---
         user.balance -= numericAmount;
 
+        // --- Создаем депозит ---
         const deposit = new Deposit({
             userId: user._id,
             principal: numericAmount,
@@ -246,14 +256,13 @@ app.post('/start-deposit', async (req, res) => {
             createdAt: new Date()
         });
 
+        // --- Начисляем первый процент ---
         const interestRate = 0.045;
         const firstInterest = numericAmount * interestRate;
-
         deposit.accrued += firstInterest;
         user.balance += firstInterest;
 
         if (!user.transactions) user.transactions = [];
-
         user.transactions.push({
             type: 'deposit',
             amount: numericAmount,
@@ -261,7 +270,6 @@ app.post('/start-deposit', async (req, res) => {
             date: new Date(),
             status: 'active'
         });
-
         user.transactions.push({
             type: 'interest',
             amount: firstInterest,
