@@ -14,22 +14,26 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  overflow: hidden;
 }
+
 .container {
   background: rgba(20, 20, 40, 0.95);
   padding: 30px;
   border-radius: 16px;
-  box-shadow: 0 0 32px rgba(0,224,255,0.4);
+  box-shadow: 0 0 32px rgba(0,224,255,0.3);
   width: 90%;
   max-width: 420px;
   text-align: center;
   position: relative;
-  overflow: hidden;
+  z-index: 2;
 }
+
 h1 {
   margin-bottom: 20px;
   color: #00e0ff;
 }
+
 input[type="email"],
 input[type="password"] {
   width: 90%;
@@ -42,202 +46,127 @@ input[type="password"] {
   color: #fff;
   font-size: 1em;
 }
+
 input::placeholder {
   color: rgba(255,255,255,0.5);
 }
+
+/* Кнопка с мягким свечением */
 button {
   width: 80%;
   max-width: 250px;
-  padding: 12px 0;
-  margin: 15px auto;
+  padding: 14px 0;
+  margin: 20px auto;
   background: linear-gradient(135deg, #00e0ff, #6a5acd);
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   font-weight: 600;
-  font-size: 1em;
+  font-size: 1.05em;
   cursor: pointer;
   color: #fff;
-  box-shadow: 0 0 20px rgba(0,224,255,0.4);
-  transition: 0.3s;
+  box-shadow: 0 0 25px rgba(0,224,255,0.8);
+  animation: glowPulse 2.5s ease-in-out infinite;
+  transition: transform 0.3s;
 }
+
 button:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 25px rgba(0,224,255,0.6);
+  transform: translateY(-3px) scale(1.05);
 }
+
+/* Эффект дыхания кнопки */
+@keyframes glowPulse {
+  0% {
+    box-shadow: 0 0 25px rgba(0,224,255,0.6), 0 0 45px rgba(0,224,255,0.3);
+  }
+  50% {
+    box-shadow: 0 0 40px rgba(0,224,255,0.9), 0 0 70px rgba(0,224,255,0.4);
+  }
+  100% {
+    box-shadow: 0 0 25px rgba(0,224,255,0.6), 0 0 45px rgba(0,224,255,0.3);
+  }
+}
+
+p a {
+  color: #00e0ff;
+  text-decoration: none;
+}
+
+p a:hover {
+  text-decoration: underline;
+}
+
 .error {
   color: #ff4c4c;
   margin-bottom: 15px;
   font-weight: 600;
 }
-p a {
-  color: #00e0ff;
-  text-decoration: none;
-}
-p a:hover {
-  text-decoration: underline;
-}
 
-/* glowing animation */
-.btn-login.glow {
-  box-shadow: 0 0 25px rgba(0,224,255,0.9);
-  transform: scale(1.08);
-}
-
-/* SVG overlay */
-.svg-overlay {
+/* 💸 Анимация плавающих долларов */
+.dollar {
   position: absolute;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
+  font-size: 22px;
+  color: rgba(0,224,255,0.5);
+  user-select: none;
   pointer-events: none;
-}
-.path-base {
-  stroke: rgba(0,224,255,0.15);
-  stroke-width: 2;
-  fill: none;
-}
-.path-glow {
-  stroke: #00e0ff;
-  stroke-width: 2.5;
-  fill: none;
-  opacity: 0.8;
-}
-.diode {
-  fill: #00e0ff;
-  filter: drop-shadow(0 0 6px #00e0ff);
-}
-.diode.pulse {
-  animation: diodePulse 0.6s ease-in-out alternate;
-}
-@keyframes diodePulse {
-  0% { r: 6; opacity: 1; }
-  100% { r: 10; opacity: 0.5; }
+  animation: floatDollar linear forwards;
 }
 
-.success-text {
-  margin-top: 30px;
-  font-weight: 600;
-  color: #00e0ff;
+@keyframes floatDollar {
+  0% {
+    transform: translateY(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  80% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(-150px) scale(1.2);
+    opacity: 0;
+  }
 }
 </style>
 </head>
 <body>
-<div class="container" id="panel">
+
+<div class="container">
   <h1>Вход</h1>
 
   <% if (typeof error !== 'undefined' && error) { %>
     <p class="error"><%= error %></p>
   <% } %>
 
-  <form action="/login" method="POST" id="loginForm">
+  <form action="/login" method="POST">
     <input type="email" name="email" placeholder="Email" required />
     <input type="password" name="password" placeholder="Пароль" required />
-    <button type="submit" class="btn-login" id="btnLogin">Войти</button>
+    <button type="submit" id="btnLogin">Войти</button>
   </form>
 
-  <p class="register-block">Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
-  <div class="success-text" id="successText">Начало к твоему успеху</div>
-
-  <!-- SVG overlay -->
-  <svg class="svg-overlay" id="svgOverlay" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="arrowMarker" markerWidth="12" markerHeight="12" refX="6" refY="6" orient="auto">
-        <path d="M2,2 L10,6 L2,10 Z" fill="#00e0ff" />
-      </marker>
-    </defs>
-    <circle id="successCircle" cx="0" cy="0" r="0"
-      stroke="rgba(0,224,255,0.16)" stroke-width="2.6"
-      fill="rgba(0,224,255,0.03)" />
-    <path id="basePath" class="path-base" d="" />
-    <path id="glowPath" class="path-glow" d=""
-      marker-end="url(#arrowMarker)" stroke-dasharray="6 8" stroke-dashoffset="0" />
-    <circle id="diode" class="diode" cx="0" cy="0" r="6" style="visibility:hidden;" />
-  </svg>
+  <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
 </div>
 
 <script>
-(function(){
-  const successText = document.getElementById('successText');
-  const registerBlock = document.querySelector('.register-block');
-  const btnLogin = document.getElementById('btnLogin');
-  const svg = document.getElementById('svgOverlay');
-  const basePath = document.getElementById('basePath');
-  const glowPath = document.getElementById('glowPath');
-  const successCircle = document.getElementById('successCircle');
-  const diode = document.getElementById('diode');function buildPath() {
-    const successRect = successText.getBoundingClientRect();
-    const registerRect = registerBlock.getBoundingClientRect();
-    const btnRect = btnLogin.getBoundingClientRect();
-    const svgRect = svg.getBoundingClientRect();
-    const offsetX = svgRect.left, offsetY = svgRect.top;
+/* 💸 Скрипт для появления плавающих $ */
+setInterval(() => {
+  const dollar = document.createElement("div");
+  dollar.classList.add("dollar");
+  dollar.textContent = "$";
 
-    const startX = successRect.left + successRect.width / 2 - offsetX;
-    const startY = successRect.top + successRect.height / 2 - offsetY;
-    const endX = btnRect.left + btnRect.width / 2 - offsetX;
-    const endY = btnRect.top + btnRect.height / 2 - offsetY;
-    const regY = registerRect.top - offsetY;
+  // Случайное расположение
+  dollar.style.left = Math.random() * 100 + "vw";
+  dollar.style.top = (Math.random() * 20 + 80) + "vh";
+  dollar.style.fontSize = Math.random() * 18 + 16 + "px";
+  dollar.style.animationDuration = (Math.random() * 3 + 3) + "s";
+  dollar.style.opacity = Math.random() * 0.6 + 0.2;
 
-    const radius = Math.max(successRect.width, successRect.height) / 2 + 18;
-    successCircle.setAttribute("cx", startX);
-    successCircle.setAttribute("cy", startY);
-    successCircle.setAttribute("r", radius);
+  document.body.appendChild(dollar);
 
-    // Линия: от круга — влево, вверх, потом плавно к кнопке
-    const d = `
-      M ${startX} ${startY + radius}
-      C ${startX - 120} ${regY - 20},
-        ${endX + 40} ${regY - 60},
-        ${endX} ${endY - 12}
-    `;
-
-    basePath.setAttribute("d", d);
-    glowPath.setAttribute("d", d);
-
-    const pathLength = glowPath.getTotalLength();
-    const startPt = glowPath.getPointAtLength(0);
-    diode.setAttribute("cx", startPt.x);
-    diode.setAttribute("cy", startPt.y);
-    diode.style.visibility = "visible";
-
-    return { pathLength };
-  }
-
-  function startAnimation() {
-    cancelAnimationFrame(window.animFrame);
-    const { pathLength } = buildPath();
-    btnLogin.classList.remove("glow");
-    diode.classList.remove("pulse");
-
-    const duration = 2500;
-    let startTime;
-
-    function animate(ts) {
-      if (!startTime) startTime = ts;
-      const t = Math.min((ts - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const point = glowPath.getPointAtLength(eased * pathLength);
-      diode.setAttribute("cx", point.x);
-      diode.setAttribute("cy", point.y);
-
-      if (t < 1) {
-        window.animFrame = requestAnimationFrame(animate);
-      } else {
-        btnLogin.classList.add("glow");
-        diode.classList.add("pulse");
-        setTimeout(() => {
-          btnLogin.classList.remove("glow");
-          diode.classList.remove("pulse");
-          setTimeout(startAnimation, 1000);
-        }, 800);
-      }
-    }
-    window.animFrame = requestAnimationFrame(animate);
-  }
-
-  window.addEventListener("load", () => setTimeout(startAnimation, 200));
-  window.addEventListener("resize", () => setTimeout(startAnimation, 500));
-})();
+  // Удаляем после анимации
+  setTimeout(() => dollar.remove(), 6000);
+}, 700);
 </script>
+
 </body>
 </html>
