@@ -14,7 +14,10 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  overflow: hidden;
+  position: relative;
 }
+
 .container {
   background: rgba(20, 20, 40, 0.95);
   padding: 30px;
@@ -24,11 +27,14 @@ body {
   max-width: 420px;
   text-align: center;
   position: relative;
+  z-index: 10; /* чтобы быть выше плавающих символов */
 }
+
 h1, h2 {
   margin-bottom: 16px;
   color: #00e0ff;
 }
+
 .ref-block {
   background: rgba(0,0,0,0.3);
   border: 1px solid rgba(255,255,255,0.2);
@@ -45,6 +51,7 @@ h1, h2 {
   word-break: break-all;
   color: #00e0ff;
 }
+
 button {
   padding: 10px 20px;
   border: none;
@@ -60,6 +67,7 @@ button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px rgba(0,224,255,0.6);
 }
+
 table {
   width: 100%;
   border-collapse: collapse;
@@ -70,14 +78,9 @@ th, td {
   padding: 10px;
   border-bottom: 1px solid rgba(255,255,255,0.2);
 }
-th {
-  color: #00e0ff;
-}
-tr:hover {
-  background: rgba(255,255,255,0.05);
-}
+th { color: #00e0ff; }
+tr:hover { background: rgba(255,255,255,0.05); }
 
-/* Уведомления */
 #notification {
   position: absolute;
   top: -60px;
@@ -113,6 +116,16 @@ nav a {
 nav a:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px rgba(0,224,255,0.6);
+}
+
+/* Плавающие 👥 */
+.dollar { 
+  position: absolute; 
+  font-size: 18px; 
+  color: #00e0ff; /* однотонный силуэт */
+  user-select: none; 
+  pointer-events: none;
+  z-index: 1;
 }
 </style>
 </head>
@@ -172,6 +185,43 @@ function copyLink() {
     .then(() => showNotification('Ссылка скопирована!', 'success'))
     .catch(() => showNotification('Ошибка при копировании', 'error'));
 }
+
+/* 💸 Плавающие 👥 с параллаксом, колебанием и вращением */
+const layers = [
+  { speed: 4, size: [18,24], opacity: [0.4,0.7], sway: 15 },
+  { speed: 6, size: [14,20], opacity: [0.3,0.6], sway: 10 },
+  { speed: 8, size: [10,16], opacity: [0.2,0.5], sway: 6 }
+];
+
+function spawnDollar() {
+  const layer = layers[Math.floor(Math.random()*layers.length)];
+  const dollar = document.createElement("div");
+  dollar.classList.add("dollar");
+  dollar.textContent = "👥";
+  dollar.style.left = Math.random()*100 + "vw";
+  dollar.style.top = Math.random()*100 + "vh"; // по всей высоте
+  dollar.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
+  dollar.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
+  dollar.style.animationDuration = layer.speed + "s";
+
+  const startRotation = Math.random()*360;
+  let rotationSpeed = (Math.random()*30 + 15) * (Math.random()<0.5?-1:1);
+  let start = Date.now();
+
+  function animateDollar() {
+    const elapsed = (Date.now()-start)/1000;
+    const offsetX = Math.sin(elapsed * 2*Math.PI/layer.speed) * layer.sway;
+    const rotation = startRotation + elapsed*rotationSpeed;
+    dollar.style.transform = `translateX(${offsetX}px) rotate(${rotation}deg)`;
+    requestAnimationFrame(animateDollar);
+  }
+  animateDollar();
+
+  document.body.appendChild(dollar);
+  setTimeout(() => dollar.remove(), layer.speed*1000 + 1000);
+}
+
+setInterval(spawnDollar, 500);
 </script>
 
 </body>
