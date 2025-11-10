@@ -430,11 +430,10 @@ app.get('/group', async (req, res) => {
 
         const referrals = await User.find({ referredBy: user.referralCode });
 
-        // Передаем переменные, которые использует старый group.ejs
         res.render('group', {
             currentUser: user,
-            team: referrals || [], // group.ejs использует team
-            request: req          // group.ejs использует request для ссылки
+            team: referrals || [],
+            request: req
         });
     } catch (err) {
         console.error('Ошибка GET /group:', err);
@@ -442,6 +441,41 @@ app.get('/group', async (req, res) => {
     }
 });
 
+// =======================
+// --- Настройки (смена пароля) ---
+// =======================
+app.get('/settings', async (req, res) => {
+    if (!req.session.userId || req.session.userId === "admin") return res.redirect('/login');
+    const user = await User.findById(req.session.userId);
+    if (!user) return res.redirect('/login');
+    res.render('settings', { currentUser: user });
+});
+
+app.post('/settings', async (req, res) => {
+    try {
+        if (!req.session.userId || req.session.userId === "admin") {
+            return res.status(401).json({ success: false, message: 'Не авторизован' });
+        }
+        const user = await User.findById(req.session.userId);
+        if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
+
+        const { oldPassword, newPassword, confirmPassword } = req.body;
+
+        const isMatch = await user.comparePassword(oldPassword);
+        if (!isMatch) return res.json({ success: false, message: 'Неверный текущий пароль' });
+
+        if (newPassword !== confirmPassword) return res.json({ success: false, message: 'Пароли не совпадают' });
+
+        user.password = newPassword;
+        await user.save();
+
+        res.json({ success: true, message: 'Пароль успешно изменён' });
+
+    } catch (err) {
+        console.error('Ошибка изменения пароля:', err);
+        res.json({ success: false, message: 'Ошибка сервера' });
+    }
+});
 
 // =======================
 // --- Запуск сервера ---
