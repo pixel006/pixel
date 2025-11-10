@@ -4,116 +4,201 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Регистрация</title>
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
 <style>
 body {
-    margin: 0;
-    font-family: "Inter", "Segoe UI", Roboto, sans-serif;
-    background: #101222;
-    color: #fff;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
+  margin: 0;
+  font-family: "Inter", "Segoe UI", Roboto, sans-serif;
+  background: #101222;
+  color: #fff;
+  overflow-x: hidden;
 }
 .container {
-    background: rgba(20, 20, 40, 0.95);
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 0 32px rgba(0,224,255,0.4);
-    width: 90%;
-    max-width: 420px;
-    text-align: center;
-    position: relative;
-}
-h1 {
-    margin-bottom: 20px;
-    color: #00e0ff;
+  background: rgba(20, 20, 40, 0.95);
+  padding: 30px;
+  border-radius: 16px;
+  box-shadow: 0 0 32px rgba(0,224,255,0.4);
+  width: 90%;
+  max-width: 420px;
+  text-align: center;
+  margin: 0 auto;
+  position: relative;
+  z-index: 10;
 }
 input[type="text"],
 input[type="number"],
 input[type="email"],
 input[type="password"] {
-    width: 90%;
-    max-width: 380px;
-    padding: 12px;
-    margin: 10px 0;
-    border-radius: 12px;
-    border: none;
-    background: rgba(0,0,0,0.3);
-    color: #fff;
-    font-size: 1em;
-    box-sizing: border-box;
+  width: 90%;
+  max-width: 380px;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 12px;
+  border: none;
+  background: rgba(0,0,0,0.3);
+  color: #fff;
+  font-size: 1em;
+  box-sizing: border-box;
 }
 input::placeholder {
-    color: rgba(255,255,255,0.6);
+  color: rgba(255,255,255,0.6);
 }
 button {
-    width: 90%;
-    max-width: 250px;
-    padding: 12px 0;
-    margin: 15px auto;
-    border: none;
-    border-radius: 12px;
-    background: linear-gradient(135deg, #00e0ff, #6a5acd);
-    color: #fff;
-    font-weight: 600;
-    font-size: 1em;
-    cursor: pointer;
-    transition: 0.3s;
-    box-shadow: 0 0 20px rgba(0,224,255,0.4);
+  width: 90%;
+  max-width: 250px;
+  padding: 12px 0;
+  margin: 15px auto;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #00e0ff, #6a5acd);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1em;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 0 20px rgba(0,224,255,0.4);
 }
 button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 25px rgba(0,224,255,0.6);
+  transform: scale(1.05);
+  box-shadow: 0 0 25px rgba(0,224,255,0.6);
 }
 .error {
-    color: #ff4c4c;
-    margin-bottom: 15px;
-    font-weight: 600;
+  color: #ff4c4c;
+  margin-bottom: 15px;
+  font-weight: 600;
 }
 p a {
-    color: #00e0ff;
-    text-decoration: none;
+  color: #00e0ff;
+  text-decoration: none;
 }
 p a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
+}
+.hero {
+  position: relative;
+  text-align: center;
+  color: white;
+  padding: 120px 20px 80px;
+  overflow: hidden;
+}
+.hero h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+.hero p {
+  font-size: 1.2rem;
+  color: #d0d0ff;
+  margin-bottom: 30px;
+}
+.hero a {
+  display: inline-block;
+  background: linear-gradient(135deg, #00e0ff, #6a5acd);
+  color: #fff;
+  font-weight: 600;
+  padding: 12px 28px;
+  border-radius: 16px;
+  box-shadow: 0 0 25px rgba(0,224,255,0.4);
+  transition: 0.3s;
+}
+.hero a:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 35px rgba(0,224,255,0.6);
 }
 </style>
 </head>
-<body>
-<div class="container">
-    <h1>Регистрация</h1>
 
-    <% if (typeof error !== 'undefined' && error) { %>
-        <p class="error"><%= error %></p>
+<body>
+<!-- Hero Section -->
+<section class="hero bg-gradient-to-r from-blue-900 to-indigo-800 relative overflow-hidden">
+  <div class="max-w-3xl mx-auto relative z-10">
+    <h1>Это место, где деньги работают за вас.</h1>
+    <p>
+      Регистрируйтесь, инвестируйте и зарабатывайте легко каждый день. <br>
+      Начни сегодня — и пусть твой баланс растёт сам! 🚀
+    </p>
+  </div>
+
+  <!-- Фон: график курса доллара -->
+  <div class="absolute inset-0 opacity-25">
+    <canvas id="usdChart"></canvas>
+  </div>
+</section>
+
+<!-- Registration Form -->
+<div class="container mt-[-60px] mb-10">
+  <h1>Регистрация</h1>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <p class="error"><%= error %></p>
+  <% } %>
+
+  <form action="/register" method="POST">
+    <input type="text" name="name" placeholder="Имя" required>
+    <input type="number" name="age" placeholder="Возраст" min="18" required>
+    <input type="email" name="email" placeholder="Email" required>
+    <input type="password" name="password" placeholder="Пароль" required>
+
+    <% const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null; %>
+    <% if (!adminEmail) { %>
+      <input type="text" name="referralCode" id="referralCode" placeholder="Реферальный код" required>
+    <% } else { %>
+      <input type="text" name="referralCode" id="referralCode" placeholder="Реферальный код">
     <% } %>
 
-    <form action="/register" method="POST">
-        <input type="text" name="name" placeholder="Имя" required>
-        <input type="number" name="age" placeholder="Возраст" min="18" required>
-        <input type="email" name="email" placeholder="Email" required>
-        <input type="password" name="password" placeholder="Пароль" required>
+    <button type="submit">Зарегистрироваться</button>
+  </form>
 
-        <% const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null; %>
-        <% if (!adminEmail) { %>
-            <input type="text" name="referralCode" id="referralCode" placeholder="Реферальный код" required>
-        <% } else { %>
-            <input type="text" name="referralCode" id="referralCode" placeholder="Реферальный код">
-        <% } %>
-
-        <button type="submit">Зарегистрироваться</button>
-    </form>
-
-    <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+  <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
 </div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+const ctx = document.getElementById('usdChart').getContext('2d');
+const baseRates = [30.4, 29.4, 31.1, 32.8, 38.6, 61.3, 67.0, 58.3, 62.5, 64.7, 72.1, 73.7, 68.5, 83.2, 89.6, 94.3];
+
+let dynamicRates = [...baseRates];
+let direction = 1;const chart = new Chart(ctx, {
+  type: 'line',
+  data: {
+    labels: Array.from({ length: dynamicRates.length }, (_, i) => 2010 + i),
+    datasets: [{
+      data: dynamicRates,
+      borderColor: '#00ffcc',
+      borderWidth: 3,
+      fill: false,
+      tension: 0.3,
+    }]
+  },
+  options: {
+    plugins: { legend: { display: false } },
+    scales: { x: { display: false }, y: { display: false } },
+    elements: { point: { radius: 0 } },
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: false
+  }
+});
+
+// 🔹 "Живое" движение графика
+setInterval(() => {
+  dynamicRates = dynamicRates.map(v => v + (Math.random() - 0.5) * 0.2 * direction);
+  direction *= Math.random() > 0.97 ? -1 : 1;
+  chart.data.datasets[0].data = dynamicRates;
+  chart.update('none');
+}, 120);
+</script>
 
 <script>
 const urlParams = new URLSearchParams(window.location.search);
 const ref = urlParams.get('ref');
 if(ref) {
-    const referralInput = document.getElementById('referralCode');
-    if(referralInput) referralInput.value = ref;
+  const referralInput = document.getElementById('referralCode');
+  if(referralInput) referralInput.value = ref;
 }
 </script>
+
 </body>
 </html>
