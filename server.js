@@ -181,7 +181,7 @@ app.get('/', async (req, res) => {
 });
 
 // =======================
-// --- Deposit (1 раз в месяц) ---
+// --- Deposit (1 раз в 30 дней) ---
 // =======================
 app.get('/deposit', async (req, res) => {
     try {
@@ -189,8 +189,7 @@ app.get('/deposit', async (req, res) => {
         const user = await User.findById(req.session.userId);
 
         const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-        const canDeposit = !lastDeposit || lastDeposit.status === 'completed' ||
-            ((new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24) >= 30);
+        const canDeposit = !lastDeposit || ((new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24) >= 30);
 
         res.render('deposit', { currentUser: user, error: null, canDeposit });
     } catch (err) {
@@ -201,7 +200,7 @@ app.get('/deposit', async (req, res) => {
 
 app.post('/start-deposit', async (req, res) => {
     try {
-        if (!req.session.userId) 
+        if (!req.session.userId)
             return res.status(401).json({ success: false, message: 'Не авторизован' });
 
         const { amount } = req.body;
@@ -217,14 +216,15 @@ app.post('/start-deposit', async (req, res) => {
         if (numericAmount > user.balance)
             return res.json({ success: false, message: 'Недостаточно средств' });
 
-        // --- Проверка: депозит только раз в 30 дней ---
+        // --- Проверка: депозит можно делать только раз в 30 дней ---
         const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-        if (lastDeposit && lastDeposit.status === 'active') {
+        if (lastDeposit) {
             const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
             if (daysSinceLast < 30) {
                 return res.json({
                     success: false,
-                    message: `Депозит можно делать только раз в месяц (через ${Math.ceil(30 - daysSinceLast)} дней)`
+                    message: `Вы уже запускали депозит ${Math.floor(daysSinceLast)} дней назад. 
+                              Новый можно будет через ${Math.ceil(30 - daysSinceLast)} дней.`
                 });
             }
         }
