@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const methodOverride = require('method-override');
 const cron = require('node-cron');
+const bcrypt = require('bcrypt');
 const User = require('./models/User');
 const Deposit = require('./models/Deposit');
 
@@ -33,6 +34,15 @@ app.use(session({
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB connected ✅'))
     .catch(err => console.log('MongoDB connection error:', err));
+
+// =======================
+// --- Метод comparePassword в User ---
+// =======================
+if (!User.schema.methods.comparePassword) {
+    User.schema.methods.comparePassword = async function(candidatePassword) {
+        return await bcrypt.compare(candidatePassword, this.password);
+    };
+}
 
 // =======================
 // --- Функция начисления процентов ---
@@ -100,11 +110,14 @@ app.post('/register', async (req, res) => {
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) return res.render('register', { error: 'Пользователь с таким email уже зарегистрирован' });
 
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
         const user = new User({
             name,
             email: normalizedEmail,
             age,
-            password,
+            password: hashedPassword,
             referredBy: normalizedEmail === adminEmail ? "000001" : referralCode,
             balance: 0,
             transactions: [],
@@ -181,7 +194,7 @@ app.get('/', async (req, res) => {
 });
 
 // =======================
-// --- Deposit ---
+// --- Deposit страницы ---
 // =======================
 app.get('/deposit', async (req, res) => {
     try {
@@ -205,9 +218,6 @@ app.get('/deposit', async (req, res) => {
     }
 });
 
-// =======================
-// --- Запуск депозита ---
-// =======================
 app.post('/start-deposit', async (req, res) => {
     try {
         if (!req.session.userId)
@@ -430,11 +440,10 @@ app.get('/group', async (req, res) => {
 
         const referrals = await User.find({ referredBy: user.referralCode });
 
-        // Передаем переменные, которые использует старый group.ejs
         res.render('group', {
             currentUser: user,
-            team: referrals || [], // group.ejs использует team
-            request: req          // group.ejs использует request для ссылки
+            team: referrals || [],
+            request: req
         });
     } catch (err) {
         console.error('Ошибка GET /group:', err);
@@ -442,6 +451,37 @@ app.get('/group', async (req, res) => {
     }
 });
 
+// =======================
+// --- Страница настроек пароля /settings ---
+// =======================
+app.get('/settings', async (req, res) => {
+    if (!req.session.userId || req.session.userId === "admin") return res.redirect('/login');
+    const user = await User.findById(req.session.userId);
+    res.render('settings', { currentUser: user, error: null, success: null });
+});
+
+app.post('/settings', async (req, res) => {
+    try {
+        const { oldPassword, newPassword, confirmPassword } = req.body;
+        const user = await User.findById(req.session.userId);
+
+        if (newPassword !== confirmPassword) {
+            return res.render('settings', { currentUser: user, error: 'Пароли не совпадают', success: null });
+        }
+
+        const isMatch = await bcrypt.compare(oldPassword, user.password);
+        if (!isMatch) return res.render('settings', { currentUser: user, error: 'Старый пароль неверный', success: null });
+
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.render('settings', { currentUser: user, error: null, success: 'Пароль успешно изменён!' });
+    } catch (err) {
+        console.error('Ошибка POST /settings:', err);
+        res.render('settings', { currentUser: req.user, error: 'Ошибка сервера', success: null });
+    }
+});
 
 // =======================
 // --- Запуск сервера ---
