@@ -20,7 +20,6 @@
 }
 
 * { box-sizing: border-box; transition: all 0.25s ease; }
-
 body {
   margin: 0;
   font-family: var(--font-main);
@@ -38,9 +37,10 @@ body {
   100% { background-position: 50% -35%; }
 }
 
-/* Плавающие $ */
+/* Доллары */
 .dollar {
   position: absolute;
+  font-size: 22px;
   color: rgba(0,224,255,0.5);
   user-select: none;
   pointer-events: none;
@@ -48,9 +48,11 @@ body {
 
 /* Меню */
 #menuToggle {
-  position: fixed; top: 24px; left: 28px; width: 56px; height: 56px;
-  border: none; border-radius: 50%; background: var(--bg-panel);
-  backdrop-filter: blur(var(--blur)); color: var(--accent); font-size: 1.6em;
+  position: fixed; top: 24px; left: 28px;
+  width: 56px; height: 56px;
+  border: none; border-radius: 50%;
+  background: var(--bg-panel); backdrop-filter: blur(var(--blur));
+  color: var(--accent); font-size: 1.6em;
   cursor: pointer; z-index: 2000;
   display: flex; align-items: center; justify-content: center;
   box-shadow: var(--accent-glow);
@@ -101,20 +103,19 @@ h1 {
   flex:1; max-width:160px; text-align:center; text-decoration:none; color:#fff;
   font-weight:600; background: linear-gradient(135deg, var(--accent), var(--accent2));
   padding:14px 0; border-radius: var(--radius); cursor:pointer;
-  box-shadow: 0 0 20px 3px rgba(0,224,255,0.4); animation: glowPulse 2.5s infinite ease-in-out, fadeUp 0.8s forwards 0.6s;
+  box-shadow: 0 0 20px 3px rgba(0,224,255,0.4);
+  animation: glowPulse 2.5s infinite ease-in-out, fadeUp 0.8s forwards 0.6s;
   opacity: 0;
 }
 #startBtn:hover { transform: scale(1.05); box-shadow:0 0 25px 6px rgba(0,224,255,0.5); }
 
-@keyframes fadeUp {
-  to { opacity: 1; transform: translateY(0); }
-}
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
 @keyframes glowPulse { 0%,100% { box-shadow:0 0 10px rgba(0,224,255,0.4);} 50%{ box-shadow:0 0 25px rgba(0,224,255,0.8);} }
 
 nav.fixed-footer {
-  position:fixed; bottom:0; left:0; width:100%; display:flex; justify-content:center;
+  position: fixed; bottom:0; left:0; width:100%; display:flex; justify-content:center;
   gap:18px; padding:20px; background: rgba(10,10,20,0.75); backdrop-filter: blur(20px);
-  border-top:1px solid rgba(255,255,255,0.05);
+  border-top:1px solid rgba(255,255,255,0.05); z-index: 1000;
 }
 nav.fixed-footer a {
   flex:1; max-width:160px; text-align:center; text-decoration:none; color: var(--text);
@@ -176,7 +177,7 @@ if(startBtn){
     });
 }
 
-/* 💸 Плавающие $ с параллаксом, колебанием и вращением */
+/* 💸 Плавающие $ с параллаксом, колебанием и вращением по всей странице */
 const layers = [
   { speed: 4, size: [18,24], opacity: [0.4,0.7], sway: 15 },
   { speed: 6, size: [14,20], opacity: [0.3,0.6], sway: 10 },
@@ -189,19 +190,19 @@ function spawnDollar() {
   dollar.classList.add("dollar");
   dollar.textContent = "$";
   dollar.style.left = Math.random()*100 + "vw";
-  dollar.style.top = (Math.random()*20 + 80) + "vh";
+  dollar.style.top = Math.random()*100 + "vh"; // по всей высоте страницы
   dollar.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
   dollar.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
   dollar.style.zIndex = 1;
 
-  // Ротация и колебание
   const startRotation = Math.random()*360;
-  const rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
-  const start = Date.now();
+  let rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
+  let start = Date.now();
+
   function animateDollar() {
     const elapsed = (Date.now() - start)/1000;
     const offsetX = Math.sin(elapsed * 2 * Math.PI / layer.speed) * layer.sway;
-    const rotation = startRotation + elapsed*rotationSpeed;
+    const rotation = startRotation + elapsed * rotationSpeed;
     dollar.style.transform = `translateX(${offsetX}px) rotate(${rotation}deg)`;
     requestAnimationFrame(animateDollar);
   }
@@ -211,7 +212,7 @@ function spawnDollar() {
   setTimeout(() => dollar.remove(), layer.speed*1000 + 1000);
 }
 
-setInterval(spawnDollar, 500);
+setInterval(spawnDollar, 400);
 </script>
 
 </body>
