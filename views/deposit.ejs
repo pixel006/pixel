@@ -87,7 +87,7 @@ const depositInput = document.getElementById('depositAmount');
 const notification = document.getElementById('notification');
 let userBalance = <%= currentUser.balance %>;
 
-function showNotification(message, type="success") {
+function showNotification(message, type = "success") {
   notification.textContent = message;
   notification.className = '';
   notification.classList.add(type);
@@ -111,14 +111,19 @@ depositBtn.addEventListener('click', async () => {
     return;
   }
 
+  depositBtn.disabled = true;
   depositBtn.textContent = '...';
 
   try {
     const res = await fetch('/start-deposit', {
       method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({amount})
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount })
     });
+
+    if (!res.ok) {
+      throw new Error(`Ошибка HTTP: ${res.status}`);
+    }
 
     const data = await res.json();
 
@@ -127,13 +132,13 @@ depositBtn.addEventListener('click', async () => {
       depositInput.value = '';
       userBalance = data.newBalance;
     } else {
-      showNotification(data.message || "Ошибка", "error");
+      showNotification(data.message || "Ошибка операции", "error");
     }
-
-  } catch(err) {
+  } catch (err) {
     console.error(err);
     showNotification('Ошибка сервера', "error");
   } finally {
+    depositBtn.disabled = false;
     depositBtn.textContent = 'Запустить';
   }
 });
