@@ -14,20 +14,29 @@ body {
   justify-content: center;
   align-items: center;
   min-height: 100vh;
+  overflow: hidden;
 }
 .container {
   background: rgba(20, 20, 40, 0.95);
-  padding: 30px;
+  padding: 40px 30px;
   border-radius: 16px;
   box-shadow: 0 0 32px rgba(0,224,255,0.4);
   width: 90%;
   max-width: 420px;
   text-align: center;
   position: relative;
+  overflow: visible;
 }
 h1 {
-  margin-bottom: 20px;
+  margin-bottom: 10px;
   color: #00e0ff;
+}
+.slogan {
+  font-size: 1.2em;
+  color: #b0bfff;
+  margin-bottom: 30px;
+  font-weight: 500;
+  position: relative;
 }
 input[type="email"],
 input[type="password"] {
@@ -48,7 +57,7 @@ button {
   width: 80%;
   max-width: 250px;
   padding: 12px 0;
-  margin: 15px auto;
+  margin: 20px auto;
   background: linear-gradient(135deg, #00e0ff, #6a5acd);
   border: none;
   border-radius: 12px;
@@ -58,15 +67,12 @@ button {
   color: #fff;
   box-shadow: 0 0 20px rgba(0,224,255,0.4);
   transition: 0.3s;
+  position: relative;
+  z-index: 5;
 }
 button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px rgba(0,224,255,0.6);
-}
-.error {
-  color: #ff4c4c;
-  margin-bottom: 15px;
-  font-weight: 600;
 }
 p a {
   color: #00e0ff;
@@ -75,15 +81,54 @@ p a {
 p a:hover {
   text-decoration: underline;
 }
+.line-svg {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 1;
+}
+path {
+  fill: none;
+  stroke: rgba(0,224,255,0.4);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+path.glow {
+  stroke: #00e0ff;
+  stroke-width: 3;
+  filter: drop-shadow(0 0 6px #00e0ff);
+  stroke-dasharray: 5 10;
+  animation: dashmove 3s linear infinite;
+}
+@keyframes dashmove {
+  to {
+    stroke-dashoffset: -30;
+  }
+}
 </style>
 </head>
 <body>
 <div class="container">
   <h1>Вход</h1>
+  <div class="slogan">Начало к твоему успеху</div>
 
-  <% if (typeof error !== 'undefined' && error) { %>
-    <p class="error"><%= error %></p>
-  <% } %>
+  <!-- Анимированная линия -->
+  <svg class="line-svg" viewBox="0 0 420 320" preserveAspectRatio="none">
+    <path d="M50,30 
+             Q100,60 120,120 
+             T180,190 
+             Q210,230 250,260 
+             T360,290" stroke="rgba(0,224,255,0.2)" stroke-width="2"/>
+    <path class="glow" d="M50,30 
+             Q100,60 120,120 
+             T180,190 
+             Q210,230 250,260 
+             T360,290"/>
+  </svg>
 
   <form action="/login" method="POST">
     <input type="email" name="email" placeholder="Email" required>
