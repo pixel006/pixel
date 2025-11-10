@@ -181,7 +181,7 @@ app.get('/', async (req, res) => {
 });
 
 // =======================
-// --- Deposit (1 раз в 30 дней) ---
+// --- Deposit (1 раз в 30 дней для пользователя) ---
 // =======================
 app.get('/deposit', async (req, res) => {
     try {
@@ -205,7 +205,25 @@ app.post('/start-deposit', async (req, res) => {
 
         const { amount } = req.body;
         const numericAmount = parseFloat(amount);
+
         const user = await User.findById(req.session.userId);
+
+        const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+        const sessionEmail = req.session.userEmail ? req.session.userEmail.toLowerCase() : null;
+
+        // --- Для обычных пользователей проверка раз в 30 дней ---
+        if (sessionEmail !== adminEmail) {
+            const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
+            if (lastDeposit) {
+                const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
+                if (daysSinceLast < 30) {
+                    return res.json({
+                        success: false,
+                        message: `Вы уже запускали депозит ${Math.floor(daysSinceLast)} дней назад. Новый можно будет через ${Math.ceil(30 - daysSinceLast)} дней.`
+                    });
+                }
+            }
+        }
 
         if (!numericAmount || numericAmount <= 0)
             return res.json({ success: false, message: 'Введите корректную сумму' });
@@ -215,17 +233,6 @@ app.post('/start-deposit', async (req, res) => {
 
         if (numericAmount > user.balance)
             return res.json({ success: false, message: 'Недостаточно средств' });
-
-        const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-        if (lastDeposit) {
-            const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
-            if (daysSinceLast < 30) {
-                return res.json({
-                    success: false,
-                    message: `Вы уже запускали депозит ${Math.floor(daysSinceLast)} дней назад. Новый можно будет через ${Math.ceil(30 - daysSinceLast)} дней.`
-                });
-            }
-        }
 
         user.balance -= numericAmount;
 
