@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
     default: () => crypto.randomBytes(3).toString('hex').toUpperCase() // пример: "A1B2C3"
   },
 
-  // Код того, кто пригласил — необязателен для первого пользователя или админа
+  // Код того, кто пригласил
   referredBy: { 
     type: String, 
     default: null
@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
 
 // Виртуальные поля для проверки администратора
 userSchema.virtual('isAdmin').get(function() {
-  return this.email === process.env.ADMIN_EMAIL;
+  return this.email && this.email.toLowerCase() === (process.env.ADMIN_EMAIL?.toLowerCase() || '');
 });
 
 // Хеширование пароля перед сохранением
@@ -47,7 +47,7 @@ userSchema.pre('save', async function(next) {
 // Проверка пароля
 userSchema.methods.comparePassword = async function(candidatePassword) {
   if (!this.password || !candidatePassword) return false;
-  return bcrypt.compare(candidatePassword, this.password);
+  return await bcrypt.compare(candidatePassword, this.password);
 };
 
 module.exports = mongoose.model('User', userSchema);
