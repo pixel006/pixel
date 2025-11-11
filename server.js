@@ -391,7 +391,7 @@ app.post('/admin/withdraw/:id', async (req, res) => {
 });
 
 // =======================
-// --- Удаление пользователя админом ---
+// --- Удаление пользователя админом (AJAX-friendly) ---
 app.delete('/admin/users/:id', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
