@@ -96,6 +96,7 @@ app.post('/register', async (req, res) => {
     try {
         const { name, email, age, password, referralCode } = req.body;
         if (!email) return res.render('register', { error: 'Email обязателен' });
+        if (!password) return res.render('register', { error: 'Пароль обязателен' });
         if (age < 18) return res.render('register', { error: 'Регистрация только с 18 лет и старше' });
 
         const normalizedEmail = email.toLowerCase();
@@ -146,7 +147,7 @@ app.get('/login', (req, res) => res.render('login', { error: null }));
 app.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
-        if (!email) return res.render('login', { error: 'Email обязателен' });
+        if (!email || !password) return res.render('login', { error: 'Email и пароль обязательны' });
 
         const normalizedEmail = email.toLowerCase();
         const adminEmail = process.env.ADMIN_EMAIL ? process.env.ADMIN_EMAIL.toLowerCase() : null;
@@ -290,7 +291,6 @@ app.post('/start-deposit', async (req, res) => {
             status: 'completed'
         });
 
-        // Бонус рефералу 15%
         let referralBonus = 0;
         if (user.referredBy) {
             const referrer = await User.findOne({ referralCode: user.referredBy });
@@ -328,11 +328,8 @@ app.post('/start-deposit', async (req, res) => {
 });
 
 // =======================
-// --- Далее идут админка, пополнение/вывод, history, group, settings, logout
-// --- Их оставляю без изменений, как в твоём коде
-// =======================
-
 // --- Админка ---
+// =======================
 app.get('/admin', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
@@ -414,7 +411,9 @@ app.post('/admin/withdraw/:id', async (req, res) => {
     }
 });
 
+// =======================
 // --- Logout ---
+// =======================
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -425,7 +424,9 @@ app.get('/logout', (req, res) => {
     });
 });
 
+// =======================
 // --- История депозитов и транзакций ---
+// =======================
 app.get('/history', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -448,7 +449,9 @@ app.get('/history', async (req, res) => {
     }
 });
 
+// =======================
 // --- Страница группы ---
+// =======================
 app.get('/group', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -470,7 +473,9 @@ app.get('/group', async (req, res) => {
     }
 });
 
+// =======================
 // --- Страница настроек пароля /settings ---
+// =======================
 app.get('/settings', async (req, res) => {
     if (!req.session.userId || req.session.userId === "admin") return res.redirect('/login');
     const user = await User.findById(req.session.userId);
