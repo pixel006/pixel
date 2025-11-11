@@ -62,7 +62,6 @@ p.no-transactions {
   color: rgba(255,255,255,0.7);
   margin-top: 10px;
 }
-/* Фиксированный футер */
 nav.fixed-footer {
   position: fixed;
   bottom: 0;
@@ -90,7 +89,6 @@ nav.fixed-footer a:hover {
   transform: scale(1.05);
   box-shadow: 0 0 20px rgba(0,224,255,0.5);
 }
-/* Уведомления */
 #notification {
   position: absolute;
   top: -60px;
@@ -121,11 +119,12 @@ nav.fixed-footer a:hover {
   <% if (deposits && deposits.length > 0) { %>
     <% deposits.forEach(dep => { 
          const startDate = new Date(dep.startDate);
+         const lastInterestDate = dep.lastInterestDate ? new Date(dep.lastInterestDate) : null;
          const now = new Date();
          const totalDays = 30;
          const daysPassed = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
          const remainingDays = Math.max(totalDays - daysPassed, 0);
-         const dailyPercent = dep.dailyPercent || 10; // 10% в день по умолчанию
+         const dailyPercent = dep.dailyPercent || 10; // 10% в день
          const accrued = dep.principal * (dailyPercent / 100) * Math.min(daysPassed, totalDays);
          const isFinished = daysPassed >= totalDays;
     %>
@@ -134,11 +133,7 @@ nav.fixed-footer a:hover {
           <strong>В работе :</strong> <%= dep.principal.toFixed(2) %>$<br>
           <strong>Дней до завершения:</strong> <%= remainingDays %> / 30<br>
           <strong>Начислено процентов:</strong> <%= accrued.toFixed(2) %>$<br>
-          <% if (daysPassed > 0) { %>
-            <strong>Последнее начисление:</strong> <%= new Date().toLocaleString() %>
-          <% } else { %>
-            <strong>Последнее начисление:</strong> — 
-          <% } %>
+          <strong>Последнее начисление:</strong> <%= lastInterestDate ? lastInterestDate.toLocaleString() : '—' %>
         <% } else { %>
           <strong>Завершён :</strong> <%= dep.principal.toFixed(2) %>$<br>
           <strong>Депозит завершён после 30 дней</strong><br>
