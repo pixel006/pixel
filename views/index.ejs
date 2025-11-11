@@ -32,13 +32,11 @@ body {
   animation: bgPulse 10s infinite alternate;
 }
 
-/* Анимация фона */
 @keyframes bgPulse {
   0% { background-position: 50% -30%; }
   100% { background-position: 50% -35%; }
 }
 
-/* Символы $ */
 .dollar {
   position: absolute;
   font-size: 22px;
@@ -47,7 +45,6 @@ body {
   pointer-events: none;
 }
 
-/* Меню */
 #menuToggle {
   position: fixed; top: 24px; left: 28px;
   width: 56px; height: 56px;
@@ -98,21 +95,31 @@ h1 {
   animation: fadeUp 0.8s forwards 0.4s;
 }
 .balance-card h2 { font-size:1.2em; color: var(--text-dim); margin-bottom:8px; }
+
 .balance-card .balance-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
 }
 .balance-card .balance-top p {
-  font-size:2em; font-weight:600; color: var(--accent); text-shadow:0 0 18px rgba(0,224,255,0.5);
-  margin:0;
+  font-size:2em; font-weight:600; color: var(--accent);
+  text-shadow:0 0 18px rgba(0,224,255,0.5); margin:0;
 }
+
+/* --- исправлено расположение кнопок --- */
+.balance-card .buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+  margin-top: 16px;
+}
+
 .balance-card button {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #fff;
   border: none;
-  padding: 10px 16px;
+  padding: 10px 20px;
   border-radius: var(--radius);
   font-weight: 600;
   cursor: pointer;
@@ -122,13 +129,7 @@ h1 {
 .balance-card button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px rgba(0,224,255,0.5);
-}
-.balance-card .balance-bottom {
-  display: flex;
-  justify-content: center;
-}
-
-#startBtn {
+}#startBtn {
   flex:1; max-width:160px; text-align:center; text-decoration:none; color:#fff;
   font-weight:600; background: linear-gradient(135deg, var(--accent), var(--accent2));
   padding:14px 0; border-radius: var(--radius); cursor:pointer;
@@ -177,9 +178,9 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
       <h2>Баланс</h2>
       <div class="balance-top">
         <p>$<%= currentUser.balance.toFixed(2) %></p>
-        <button onclick="topUpDeposit()">Пополнить</button>
       </div>
-      <div class="balance-bottom">
+      <div class="buttons">
+        <button onclick="topUpDeposit()">Пополнить</button>
         <button onclick="withdrawDeposit()">Вывести</button>
       </div>
     </div>
@@ -233,10 +234,8 @@ function spawnDollar() {
   const startRotation = Math.random()*360;
   let rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
   let start = Date.now();
-
   function animateDollar() {
-    const elapsed = (Date.now() - start)/1000;
-    const offsetX = Math.sin(elapsed * 2 * Math.PI / layer.speed) * layer.sway;
+    const elapsed = (Date.now() - start)/1000;const offsetX = Math.sin(elapsed * 2 * Math.PI / layer.speed) * layer.sway;
     const rotation = startRotation + elapsed * rotationSpeed;
     dollar.style.transform = `translateX(${offsetX}px) rotate(${rotation}deg)`;
     requestAnimationFrame(animateDollar);
