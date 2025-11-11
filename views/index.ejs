@@ -106,7 +106,6 @@ h1 {
   text-shadow:0 0 18px rgba(0,224,255,0.5); margin:0;
 }
 
-/* --- исправлено расположение кнопок --- */
 .balance-card .buttons {
   display: flex;
   flex-direction: column;
@@ -129,7 +128,9 @@ h1 {
 .balance-card button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px rgba(0,224,255,0.5);
-}#startBtn {
+}
+
+#startBtn {
   flex:1; max-width:160px; text-align:center; text-decoration:none; color:#fff;
   font-weight:600; background: linear-gradient(135deg, var(--accent), var(--accent2));
   padding:14px 0; border-radius: var(--radius); cursor:pointer;
@@ -235,7 +236,8 @@ function spawnDollar() {
   let rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
   let start = Date.now();
   function animateDollar() {
-    const elapsed = (Date.now() - start)/1000;const offsetX = Math.sin(elapsed * 2 * Math.PI / layer.speed) * layer.sway;
+    const elapsed = (Date.now() - start)/1000;
+    const offsetX = Math.sin(elapsed * 2 * Math.PI / layer.speed) * layer.sway;
     const rotation = startRotation + elapsed * rotationSpeed;
     dollar.style.transform = `translateX(${offsetX}px) rotate(${rotation}deg)`;
     requestAnimationFrame(animateDollar);
