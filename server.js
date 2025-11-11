@@ -323,6 +323,8 @@ app.get('/admin', async (req, res) => {
     }
 });
 
+// =======================
+// --- Пополнение и вывод админом ---
 app.post('/admin/deposit/:id', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
@@ -385,6 +387,27 @@ app.post('/admin/withdraw/:id', async (req, res) => {
     } catch (err) {
         console.error('Ошибка /admin/withdraw:', err);
         res.status(500).json({ success: false, message: 'Ошибка сервера при выводе' });
+    }
+});
+
+// =======================
+// --- Удаление пользователя админом ---
+app.delete('/admin/users/:id', async (req, res) => {
+    try {
+        const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+        const sessionEmail = req.session.userEmail ? req.session.userEmail.toLowerCase() : null;
+        if (!req.session.userId || sessionEmail !== adminEmail) {
+            return res.status(403).json({ success: false, message: 'Доступ запрещён' });
+        }
+
+        const user = await User.findById(req.params.id);
+        if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
+
+        await user.deleteOne();
+        res.json({ success: true, message: 'Пользователь удалён' });
+    } catch (err) {
+        console.error('Ошибка DELETE /admin/users/:id:', err);
+        res.status(500).json({ success: false, message: 'Ошибка сервера' });
     }
 });
 
