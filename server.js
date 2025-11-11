@@ -12,7 +12,6 @@ const app = express();
 
 // =======================
 // --- Настройки EJS и статики ---
-// =======================
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -21,7 +20,6 @@ app.use(express.static('public'));
 
 // =======================
 // --- Сессии ---
-// =======================
 app.use(session({
     secret: 'supersecretkey',
     resave: false,
@@ -30,23 +28,12 @@ app.use(session({
 
 // =======================
 // --- Подключение к MongoDB ---
-// =======================
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB connected ✅'))
     .catch(err => console.log('MongoDB connection error:', err));
 
 // =======================
-// --- Метод comparePassword в User ---
-// =======================
-if (!User.schema.methods.comparePassword) {
-    User.schema.methods.comparePassword = async function(candidatePassword) {
-        return await bcrypt.compare(candidatePassword, this.password);
-    };
-}
-
-// =======================
 // --- Функция начисления процентов ---
-// =======================
 async function accrueDailyInterest() {
     try {
         const deposits = await Deposit.find({ status: 'active' });
@@ -84,12 +71,10 @@ async function accrueDailyInterest() {
     }
 }
 
-// --- Запуск cron каждый день в 03:00 ---
 cron.schedule('0 3 * * *', accrueDailyInterest);
 
 // =======================
 // --- Регистрация ---
-// =======================
 app.get('/register', (req, res) => res.render('register', { error: null }));
 
 app.post('/register', async (req, res) => {
@@ -111,14 +96,11 @@ app.post('/register', async (req, res) => {
         const existingUser = await User.findOne({ email: normalizedEmail });
         if (existingUser) return res.render('register', { error: 'Пользователь с таким email уже зарегистрирован' });
 
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
         const user = new User({
             name,
             email: normalizedEmail,
             age,
-            password: hashedPassword,
+            password,
             referredBy: normalizedEmail === adminEmail ? "000001" : referralCode,
             balance: 0,
             transactions: [],
@@ -141,7 +123,6 @@ app.post('/register', async (req, res) => {
 
 // =======================
 // --- Логин ---
-// =======================
 app.get('/login', (req, res) => res.render('login', { error: null }));
 
 app.post('/login', async (req, res) => {
@@ -178,7 +159,6 @@ app.post('/login', async (req, res) => {
 
 // =======================
 // --- Главная страница ---
-// =======================
 app.get('/', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -196,7 +176,6 @@ app.get('/', async (req, res) => {
 
 // =======================
 // --- Deposit страницы ---
-// =======================
 app.get('/deposit', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -220,8 +199,7 @@ app.get('/deposit', async (req, res) => {
 });
 
 // =======================
-// --- POST /start-deposit с бонусом рефералу 15% ---
-// =======================
+// --- POST /start-deposit ---
 app.post('/start-deposit', async (req, res) => {
     try {
         if (!req.session.userId)
@@ -329,7 +307,6 @@ app.post('/start-deposit', async (req, res) => {
 
 // =======================
 // --- Админка ---
-// =======================
 app.get('/admin', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
@@ -413,7 +390,6 @@ app.post('/admin/withdraw/:id', async (req, res) => {
 
 // =======================
 // --- Logout ---
-// =======================
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -426,7 +402,6 @@ app.get('/logout', (req, res) => {
 
 // =======================
 // --- История депозитов и транзакций ---
-// =======================
 app.get('/history', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -451,7 +426,6 @@ app.get('/history', async (req, res) => {
 
 // =======================
 // --- Страница группы ---
-// =======================
 app.get('/group', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -475,7 +449,6 @@ app.get('/group', async (req, res) => {
 
 // =======================
 // --- Страница настроек пароля /settings ---
-// =======================
 app.get('/settings', async (req, res) => {
     if (!req.session.userId || req.session.userId === "admin") return res.redirect('/login');
     const user = await User.findById(req.session.userId);
@@ -507,6 +480,5 @@ app.post('/settings', async (req, res) => {
 
 // =======================
 // --- Запуск сервера ---
-// =======================
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT} 🚀`));
