@@ -122,24 +122,28 @@ nav.fixed-footer a:hover {
     <% deposits.forEach(dep => { 
          const startDate = new Date(dep.startDate);
          const now = new Date();
-         const diffDays = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
          const totalDays = 30;
-         const daysPassed = Math.min(totalDays, diffDays);
-         const dailyPercent = dep.dailyPercent || 1; // процент в день
-         const accrued = dep.principal * (dailyPercent / 100) * daysPassed;
+         const daysPassed = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+         const remainingDays = Math.max(totalDays - daysPassed, 0);
+         const dailyPercent = dep.dailyPercent || 10; // 10% в день по умолчанию
+         const accrued = dep.principal * (dailyPercent / 100) * Math.min(daysPassed, totalDays);
          const isFinished = daysPassed >= totalDays;
     %>
       <div class="deposit-card">
         <% if (!isFinished) { %>
           <strong>В работе :</strong> <%= dep.principal.toFixed(2) %>$<br>
-          <strong>Дней до завершения:</strong> <%= daysPassed %> / 30<br>
+          <strong>Дней до завершения:</strong> <%= remainingDays %> / 30<br>
           <strong>Начислено процентов:</strong> <%= accrued.toFixed(2) %>$<br>
-          <strong>Последнее начисление:</strong> <%= new Date().toLocaleString() %>
+          <% if (daysPassed > 0) { %>
+            <strong>Последнее начисление:</strong> <%= new Date().toLocaleString() %>
+          <% } else { %>
+            <strong>Последнее начисление:</strong> — 
+          <% } %>
         <% } else { %>
           <strong>Завершён :</strong> <%= dep.principal.toFixed(2) %>$<br>
           <strong>Депозит завершён после 30 дней</strong><br>
           <strong>Всего начислено:</strong> <%= accrued.toFixed(2) %>$<br>
-          <strong>Завершено:</strong> <%= new Date().toLocaleString() %>
+          <strong>Завершено:</strong> <%= new Date(startDate.getTime() + 30*24*60*60*1000).toLocaleString() %>
         <% } %>
       </div>
     <% }) %>
@@ -147,28 +151,29 @@ nav.fixed-footer a:hover {
     <p class="no-transactions">Депозиты пока отсутствуют.</p>
   <% } %>
 
-  <!-- Транзакции -->
-  <h2>Транзакции</h2>
-  <% if (!transactions || transactions.length === 0) { %>
-    <p class="no-transactions">Операций пока нет.</p>
+  <!-- Проценты от приглашённых -->
+  <h2>Проценты от приглашённых</h2>
+  <% const referralTx = transactions ? transactions.filter(tx => tx.type === 'referral_bonus') : []; %>
+  <% if (referralTx.length === 0) { %>
+    <p class="no-transactions">Бонусов от приглашённых пока нет.</p>
   <% } else { %>
-    <% const sortedTx = transactions.slice().sort((a, b) => new Date(b.date) - new Date(a.date)); %>
+    <% const sortedReferrals = referralTx.sort((a, b) => new Date(b.date) - new Date(a.date)); %>
     <table>
       <thead>
         <tr>
-          <th>Тип</th>
-          <th>Сумма ($)</th>
-          <th>Дата и время</th>
+          <th>Приглашённый</th>
+          <th>Бонус ($)</th>
+          <th>Дата</th>
           <th>Описание</th>
         </tr>
       </thead>
       <tbody>
-        <% sortedTx.forEach(tx => { %>
+        <% sortedReferrals.forEach(tx => { %>
           <tr>
-            <td><%= tx.type === 'referral_bonus' ? 'Бонус от реферала' : tx.type %></td>
+            <td><%= tx.fromUserName || tx.fromUserId || "—" %></td>
             <td><%= tx.amount.toFixed(2) %></td>
             <td><%= tx.date ? new Date(tx.date).toLocaleString() : '—' %></td>
-            <td><%= tx.description %></td>
+            <td><%= tx.description || "Реферальное начисление" %></td>
           </tr>
         <% }) %>
       </tbody>
