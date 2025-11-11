@@ -145,13 +145,16 @@ nav.fixed-footer a:hover {
         <tr>
           <th>Тип</th>
           <th>Сумма ($)</th>
-          <th>Дата и время</th><th>Описание</th>
+          <th>Дата и время</th>
+          <th>Описание</th>
         </tr>
       </thead>
       <tbody>
         <% transactions.forEach(tx => { %>
           <tr>
-            <td><%= tx.type %></td>
+            <td>
+              <%= tx.type === 'referral_bonus' ? 'Бонус от реферала' : tx.type %>
+            </td>
             <td><%= tx.amount.toFixed(2) %></td>
             <td><%= tx.date ? new Date(tx.date).toLocaleString() : '—' %></td>
             <td><%= tx.description %></td>

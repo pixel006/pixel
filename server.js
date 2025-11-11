@@ -218,6 +218,9 @@ app.get('/deposit', async (req, res) => {
     }
 });
 
+// =======================
+// --- POST /start-deposit с бонусом рефералу 15% ---
+// =======================
 app.post('/start-deposit', async (req, res) => {
     try {
         if (!req.session.userId)
@@ -287,13 +290,35 @@ app.post('/start-deposit', async (req, res) => {
             status: 'completed'
         });
 
+        // Бонус рефералу 15%
+        let referralBonus = 0;
+        if (user.referredBy) {
+            const referrer = await User.findOne({ referralCode: user.referredBy });
+            if (referrer) {
+                referralBonus = numericAmount * 0.15;
+                referrer.balance += referralBonus;
+
+                if (!referrer.transactions) referrer.transactions = [];
+                referrer.transactions.push({
+                    type: 'referral_bonus',
+                    amount: referralBonus,
+                    description: `Бонус 15% от депозита реферала ${user.name}`,
+                    date: new Date(),
+                    status: 'completed'
+                });
+
+                await referrer.save();
+            }
+        }
+
         await deposit.save();
         await user.save();
 
         res.json({
             success: true,
             message: `Депозит на $${numericAmount} запущен! Начислено ${firstInterest.toFixed(2)}$`,
-            newBalance: user.balance
+            newBalance: user.balance,
+            referralBonus
         });
 
     } catch (err) {
@@ -303,8 +328,11 @@ app.post('/start-deposit', async (req, res) => {
 });
 
 // =======================
-// --- Админка ---
+// --- Далее идут админка, пополнение/вывод, history, group, settings, logout
+// --- Их оставляю без изменений, как в твоём коде
 // =======================
+
+// --- Админка ---
 app.get('/admin', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
@@ -321,9 +349,6 @@ app.get('/admin', async (req, res) => {
     }
 });
 
-// =======================
-// --- Пополнение/Вывод админом ---
-// =======================
 app.post('/admin/deposit/:id', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
@@ -389,9 +414,7 @@ app.post('/admin/withdraw/:id', async (req, res) => {
     }
 });
 
-// =======================
 // --- Logout ---
-// =======================
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -402,9 +425,7 @@ app.get('/logout', (req, res) => {
     });
 });
 
-// =======================
 // --- История депозитов и транзакций ---
-// =======================
 app.get('/history', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -427,9 +448,7 @@ app.get('/history', async (req, res) => {
     }
 });
 
-// =======================
 // --- Страница группы ---
-// =======================
 app.get('/group', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -451,9 +470,7 @@ app.get('/group', async (req, res) => {
     }
 });
 
-// =======================
 // --- Страница настроек пароля /settings ---
-// =======================
 app.get('/settings', async (req, res) => {
     if (!req.session.userId || req.session.userId === "admin") return res.redirect('/login');
     const user = await User.findById(req.session.userId);

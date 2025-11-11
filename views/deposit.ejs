@@ -80,7 +80,7 @@ button:hover {
 .coin {
   position: absolute;
   font-size: 22px;
-  color: #00e0ff; /* однотонный цвет */
+  color: #00e0ff;
   user-select: none;
   pointer-events: none;
   z-index: 1;
@@ -145,7 +145,11 @@ depositBtn.addEventListener('click', async () => {
     const data = await res.json();
 
     if (data.success) {
-      showNotification(`Депозит на $${amount} запущен! Баланс: ${data.newBalance.toFixed(2)}$`, "success");
+      let msg = `Депозит на $${amount} запущен! Начислено ${data.firstInterest?.toFixed(2)}$`;
+      if (data.referralBonus) {
+        msg += `. Ваш реферал получил бонус ${data.referralBonus.toFixed(2)}$`;
+      }
+      showNotification(msg, "success");
       depositInput.value = '';
       userBalance = data.newBalance;
     } else {

@@ -18,27 +18,18 @@ const userSchema = new mongoose.Schema({
   // Код того, кто пригласил — необязателен для первого пользователя или админа
   referredBy: { 
     type: String, 
-    required: function() {
-      // Если пользователь админ или первый в базе — не обязателен
-      return !this.isAdmin && !this.isFirstUser;
-    },
     default: null
   },
 
   // Финансы
-  balance: { type: Number, default: 0 },
-  deposits: { type: Number, default: 0 } // сколько пополнил
+  balance: { type: Number, default: 0 },        // баланс пользователя
+  deposits: { type: Number, default: 0 },       // сумма всех депозитов
+  transactions: { type: Array, default: [] }    // история транзакций
 }, { timestamps: true });
 
-// Виртуальные поля для проверки первого пользователя и админа
+// Виртуальные поля для проверки администратора
 userSchema.virtual('isAdmin').get(function() {
   return this.email === process.env.ADMIN_EMAIL;
-});
-
-userSchema.virtual('isFirstUser').get(async function() {
-  const User = mongoose.model('User');
-  const count = await User.countDocuments();
-  return count === 0;
 });
 
 // Хеширование пароля перед сохранением

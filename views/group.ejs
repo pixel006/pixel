@@ -27,7 +27,7 @@ body {
   max-width: 420px;
   text-align: center;
   position: relative;
-  z-index: 10; /* чтобы быть выше плавающих символов */
+  z-index: 10;
 }
 
 h1, h2 {
@@ -122,7 +122,7 @@ nav a:hover {
 .dollar { 
   position: absolute; 
   font-size: 18px; 
-  color: #00e0ff; /* однотонный силуэт */
+  color: #00e0ff; 
   user-select: none; 
   pointer-events: none;
   z-index: 1;
@@ -199,7 +199,7 @@ function spawnDollar() {
   dollar.classList.add("dollar");
   dollar.textContent = "👥";
   dollar.style.left = Math.random()*100 + "vw";
-  dollar.style.top = Math.random()*100 + "vh"; // по всей высоте
+  dollar.style.top = Math.random()*100 + "vh";
   dollar.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
   dollar.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
   dollar.style.animationDuration = layer.speed + "s";
