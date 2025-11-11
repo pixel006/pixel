@@ -98,7 +98,35 @@ h1 {
   animation: fadeUp 0.8s forwards 0.4s;
 }
 .balance-card h2 { font-size:1.2em; color: var(--text-dim); margin-bottom:8px; }
-.balance-card p { font-size:2em; font-weight:600; color: var(--accent); text-shadow:0 0 18px rgba(0,224,255,0.5); }
+.balance-card .balance-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.balance-card .balance-top p {
+  font-size:2em; font-weight:600; color: var(--accent); text-shadow:0 0 18px rgba(0,224,255,0.5);
+  margin:0;
+}
+.balance-card button {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  border: none;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+  box-shadow: 0 0 20px rgba(0,224,255,0.4);
+}
+.balance-card button:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 25px rgba(0,224,255,0.5);
+}
+.balance-card .balance-bottom {
+  display: flex;
+  justify-content: center;
+}
 
 #startBtn {
   flex:1; max-width:160px; text-align:center; text-decoration:none; color:#fff;
@@ -147,7 +175,13 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
     <h1>Добро пожаловать, <%= currentUser.name %></h1>
     <div class="balance-card">
       <h2>Баланс</h2>
-      <p>$<%= currentUser.balance.toFixed(2) %></p>
+      <div class="balance-top">
+        <p>$<%= currentUser.balance.toFixed(2) %></p>
+        <button onclick="topUpDeposit()">Пополнить</button>
+      </div>
+      <div class="balance-bottom">
+        <button onclick="withdrawDeposit()">Вывести</button>
+      </div>
     </div>
     <p style="margin-top:30px;color:var(--text-dim);font-size:1.05em;">
       Нажмите <b>START</b> для запуска депозита.
@@ -178,7 +212,7 @@ if(startBtn){
     });
 }
 
-/* 💸 Плавающие $ по всей странице, пересекают нижний бар, бар фиксирован */
+/* 💸 Плавающие $ по всей странице */
 const layers = [
   { speed: 4, size: [18,24], opacity: [0.4,0.7], sway: 15 },
   { speed: 6, size: [14,20], opacity: [0.3,0.6], sway: 10 },
@@ -191,10 +225,10 @@ function spawnDollar() {
   dollar.classList.add("dollar");
   dollar.textContent = "$";
   dollar.style.left = Math.random()*100 + "vw";
-  dollar.style.top = Math.random()*100 + "vh"; // по всей высоте
+  dollar.style.top = Math.random()*100 + "vh";
   dollar.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
   dollar.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
-  dollar.style.zIndex = 0; // чтобы не перекрывало интерфейс сверху
+  dollar.style.zIndex = 0;
 
   const startRotation = Math.random()*360;
   let rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
@@ -214,6 +248,37 @@ function spawnDollar() {
 }
 
 setInterval(spawnDollar, 400);
+
+/* Функции кнопок Пополнить и Вывести */
+function topUpDeposit() {
+  const amount = prompt("Введите сумму для пополнения:");
+  if(!amount) return;
+  fetch('/deposit/topup', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ amount: parseFloat(amount) })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+    if(data.success) location.reload();
+  });
+}
+
+function withdrawDeposit() {
+  const amount = prompt("Введите сумму для вывода:");
+  if(!amount) return;
+  fetch('/deposit/withdraw', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({ amount: parseFloat(amount) })
+  })
+  .then(res => res.json())
+  .then(data => {
+    alert(data.message);
+    if(data.success) location.reload();
+  });
+}
 </script>
 
 </body>
