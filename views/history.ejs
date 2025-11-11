@@ -124,7 +124,7 @@ nav.fixed-footer a:hover {
          const totalDays = 30;
          const daysPassed = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
          const remainingDays = Math.max(totalDays - daysPassed, 0);
-         const dailyPercent = dep.dailyPercent || 10; // 10% в день
+         const dailyPercent = dep.dailyPercent || 10; 
          const accrued = dep.principal * (dailyPercent / 100) * Math.min(daysPassed, totalDays);
          const isFinished = daysPassed >= totalDays;
     %>
@@ -165,10 +165,10 @@ nav.fixed-footer a:hover {
       <tbody>
         <% sortedReferrals.forEach(tx => { %>
           <tr>
-            <td><%= tx.fromUserName || tx.fromUserId || "—" %></td>
+            <td><%= tx.fromUserName || "—" %></td>
             <td><%= tx.amount.toFixed(2) %></td>
             <td><%= tx.date ? new Date(tx.date).toLocaleString() : '—' %></td>
-            <td><%= tx.description || "Реферальное начисление" %></td>
+            <td>Бонус <%= tx.percent || '' %>% от депозита реферала</td>
           </tr>
         <% }) %>
       </tbody>
