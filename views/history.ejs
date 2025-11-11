@@ -104,33 +104,45 @@ nav.fixed-footer a:hover {
   color: #fff;
   box-shadow: 0 0 20px rgba(0,224,255,0.5);
 }
-#notification.success { background: linear-gradient(135deg, #00e0ff, #6a5acd); }
-#notification.error { background: linear-gradient(135deg, #ff4c4c, #ff0000); }
+#notification.success {
+  background: linear-gradient(135deg, #00e0ff, #6a5acd);
+}
+#notification.error {
+  background: linear-gradient(135deg, #ff4c4c, #ff0000);
+}
 </style>
 </head>
 <body>
-
 <div class="container">
   <div id="notification"></div>
   <h1>История депозитов и начислений</h1>
 
   <!-- Депозиты -->
   <% if (deposits && deposits.length > 0) { %>
-      <% deposits.forEach(dep => { %>
-        <div class="deposit-card">
-          <strong>Депозит:</strong> <%= dep.principal.toFixed(2) %>$<br>
-          <strong>Статус:</strong> <%= dep.status === 'active' ? 'В работе' : 'Завершён' %><br>
-          <% if (dep.status === 'active') { %>
-            <strong>Дней до завершения:</strong> <%= dep.daysLeft %> / 30<br>
-            <strong>Начислено процентов:</strong> <%= dep.accrued.toFixed(2) %>$<br>
-            <strong>Последнее начисление:</strong> <%= dep.lastInterestDate ? new Date(dep.lastInterestDate).toLocaleString() : '—' %>
-          <% } else { %>
-            <strong>Депозит завершён после 30 дней</strong><br>
-            <strong>Всего начислено:</strong> <%= dep.accrued.toFixed(2) %>$<br>
-            <strong>Завершено:</strong> <%= dep.lastInterestDate ? new Date(dep.lastInterestDate).toLocaleString() : '—' %>
-          <% } %>
-        </div>
-      <% }) %>
+    <% deposits.forEach(dep => { 
+         const startDate = new Date(dep.startDate);
+         const now = new Date();
+         const diffDays = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+         const totalDays = 30;
+         const daysPassed = Math.min(totalDays, diffDays);
+         const dailyPercent = dep.dailyPercent || 1; // процент в день
+         const accrued = dep.principal * (dailyPercent / 100) * daysPassed;
+         const isFinished = daysPassed >= totalDays;
+    %>
+      <div class="deposit-card">
+        <% if (!isFinished) { %>
+          <strong>В работе :</strong> <%= dep.principal.toFixed(2) %>$<br>
+          <strong>Дней до завершения:</strong> <%= daysPassed %> / 30<br>
+          <strong>Начислено процентов:</strong> <%= accrued.toFixed(2) %>$<br>
+          <strong>Последнее начисление:</strong> <%= new Date().toLocaleString() %>
+        <% } else { %>
+          <strong>Завершён :</strong> <%= dep.principal.toFixed(2) %>$<br>
+          <strong>Депозит завершён после 30 дней</strong><br>
+          <strong>Всего начислено:</strong> <%= accrued.toFixed(2) %>$<br>
+          <strong>Завершено:</strong> <%= new Date().toLocaleString() %>
+        <% } %>
+      </div>
+    <% }) %>
   <% } else { %>
     <p class="no-transactions">Депозиты пока отсутствуют.</p>
   <% } %>
@@ -140,6 +152,7 @@ nav.fixed-footer a:hover {
   <% if (!transactions || transactions.length === 0) { %>
     <p class="no-transactions">Операций пока нет.</p>
   <% } else { %>
+    <% const sortedTx = transactions.slice().sort((a, b) => new Date(b.date) - new Date(a.date)); %>
     <table>
       <thead>
         <tr>
@@ -150,11 +163,9 @@ nav.fixed-footer a:hover {
         </tr>
       </thead>
       <tbody>
-        <% transactions.forEach(tx => { %>
+        <% sortedTx.forEach(tx => { %>
           <tr>
-            <td>
-              <%= tx.type === 'referral_bonus' ? 'Бонус от реферала' : tx.type %>
-            </td>
+            <td><%= tx.type === 'referral_bonus' ? 'Бонус от реферала' : tx.type %></td>
             <td><%= tx.amount.toFixed(2) %></td>
             <td><%= tx.date ? new Date(tx.date).toLocaleString() : '—' %></td>
             <td><%= tx.description %></td>
@@ -163,7 +174,6 @@ nav.fixed-footer a:hover {
       </tbody>
     </table>
   <% } %>
-
 </div>
 
 <nav class="fixed-footer">
@@ -181,6 +191,5 @@ function showNotification(message, type="success") {
   setTimeout(() => notification.style.display = 'none', 3000);
 }
 </script>
-
 </body>
 </html>
