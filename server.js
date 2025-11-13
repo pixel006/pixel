@@ -39,13 +39,16 @@ async function accrueDailyInterest() {
         const deposits = await Deposit.find({ status: 'active' });
         const today = new Date();
 
+        // --- Ставка из .env или по умолчанию 4.5% ---
+        const DAILY_RATE = parseFloat(process.env.DAILY_RATE) || 0.045;
+
         for (let dep of deposits) {
             const user = await User.findById(dep.userId);
             if (!user) continue;
 
             const days = Math.floor((today - dep.lastInterestDate) / (1000 * 60 * 60 * 24));
             if (days > 0 && dep.remainingDays > 0) {
-                const interest = dep.principal * 0.045;
+                const interest = dep.principal * DAILY_RATE;
                 dep.accrued += interest;
                 dep.remainingDays -= 1;
                 dep.lastInterestDate = today;
@@ -71,6 +74,7 @@ async function accrueDailyInterest() {
     }
 }
 
+// Запуск начисления ежедневно в 03:00
 cron.schedule('0 3 * * *', accrueDailyInterest);
 
 // =======================
@@ -175,7 +179,7 @@ app.get('/', async (req, res) => {
 });
 
 // =======================
-// --- Deposit страницы ---
+// --- Страница депозита ---
 app.get('/deposit', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -248,8 +252,8 @@ app.post('/start-deposit', async (req, res) => {
             createdAt: new Date()
         });
 
-        const interestRate = 0.045;
-        const firstInterest = numericAmount * interestRate;
+        const DAILY_RATE = parseFloat(process.env.DAILY_RATE) || 0.045;
+        const firstInterest = numericAmount * DAILY_RATE;
         deposit.accrued += firstInterest;
         user.balance += firstInterest;
 
@@ -269,6 +273,7 @@ app.post('/start-deposit', async (req, res) => {
             status: 'completed'
         });
 
+        // Реферальный бонус
         let referralBonus = 0;
         if (user.referredBy) {
             const referrer = await User.findOne({ referralCode: user.referredBy });
@@ -391,7 +396,7 @@ app.post('/admin/withdraw/:id', async (req, res) => {
 });
 
 // =======================
-// --- Удаление пользователя админом (AJAX-friendly) ---
+// --- Удаление пользователя ---
 app.delete('/admin/users/:id', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
@@ -424,7 +429,7 @@ app.get('/logout', (req, res) => {
 });
 
 // =======================
-// --- История депозитов и транзакций ---
+// --- История депозитов ---
 app.get('/history', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -448,7 +453,7 @@ app.get('/history', async (req, res) => {
 });
 
 // =======================
-// --- Страница группы ---
+// --- Группа (рефералы) ---
 app.get('/group', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -471,7 +476,7 @@ app.get('/group', async (req, res) => {
 });
 
 // =======================
-// --- Страница настроек пароля /settings ---
+// --- Настройки пароля ---
 app.get('/settings', async (req, res) => {
     if (!req.session.userId || req.session.userId === "admin") return res.redirect('/login');
     const user = await User.findById(req.session.userId);
