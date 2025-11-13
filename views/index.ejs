@@ -13,7 +13,7 @@
   --accent-glow: 0 0 24px #00e0ff88;
   --text: #f0f4ff;
   --text-dim: #a0a5b8;
-  --radius: 18px;
+  --radius: 20px;
   --blur: 16px;
   --shadow-soft: 0 0 32px rgba(0,0,0,0.4);
   --font-main: "Inter", "Segoe UI", Roboto, sans-serif;
@@ -69,11 +69,6 @@ aside.sidebar {
   width:100%; text-decoration:none; color:var(--text); font-weight:500; font-size:1.05em;
   padding:14px 0; margin:6px 0; border-radius: var(--radius); position: relative;
 }
-.sidebar a::before {
-  content:""; position:absolute; left:-20px; top:50%; transform:translateY(-50%);
-  width:6px; height:6px; border-radius:50%; background:transparent; transition:0.3s;
-}
-.sidebar a:hover::before { background: var(--accent); box-shadow: var(--accent-glow); }
 .sidebar a:hover { color: var(--accent); transform:translateX(5px); }
 
 main.content { padding:100px 40px; margin-left:0; transition: margin-left 0.4s ease; }
@@ -87,69 +82,63 @@ h1 {
   animation: fadeUp 0.8s forwards 0.2s;
 }
 
-/* --- Балансная карточка --- */
+/* === Карточка баланса === */
 .balance-card {
   background: var(--bg-panel);
   backdrop-filter: blur(var(--blur));
   border-radius: var(--radius);
   border: 1px solid rgba(255,255,255,0.05);
-  padding: 24px 28px;
+  padding: 32px 28px;
   max-width: 420px;
   box-shadow: var(--shadow-soft);
-  margin-bottom: 20px;
+  margin: 0 auto 40px;
+  text-align: center;
   opacity: 0;
   transform: translateY(30px);
   animation: fadeUp 0.8s forwards 0.4s;
 }
 
-.balance-card .balance-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 0;
-}
-
 .balance-card h2 {
-  font-size: 1.2em;
+  font-size: 1.3em;
   color: var(--text-dim);
   margin: 0;
-  line-height: 1.3;
 }
 
-/* кнопки вертикально, компактно */
+.balance-card .balance-value {
+  font-size: 2.4em;
+  font-weight: 600;
+  color: var(--accent);
+  text-shadow: 0 0 20px rgba(0,224,255,0.5);
+  margin: 10px 0 24px 0;
+}
+
+/* Центрируем кнопки строго под балансом */
 .balance-card .buttons {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  align-items: flex-end;
+  align-items: center;
+  gap: 12px;
 }
 
 .balance-card button {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #fff;
   border: none;
-  padding: 8px 18px;
-  border-radius: var(--radius);
+  padding: 12px 28px;
+  border-radius: 999px;
   font-weight: 600;
+  font-size: 1em;
   cursor: pointer;
   transition: 0.3s;
-  box-shadow: 0 0 20px rgba(0,224,255,0.4);
-  min-width: 120px;
-  text-align: center;
+  box-shadow: 0 0 25px rgba(0,224,255,0.4);
+  width: 180px;
 }
 .balance-card button:hover {
   transform: scale(1.05);
-  box-shadow: 0 0 25px rgba(0,224,255,0.5);
-}.balance-card .balance-value {
-  font-size: 2em;
-  font-weight: 600;
-  color: var(--accent);
-  text-shadow: 0 0 18px rgba(0,224,255,0.5);
-  margin: 6px 0 0 0;
+  box-shadow: 0 0 35px rgba(0,224,255,0.6);
 }
 
-/* --- Кнопка START и футер --- */
-#startBtn {
+/* === Кнопка START и футер === */#startBtn {
   flex:1; max-width:160px; text-align:center; text-decoration:none; color:#fff;
   font-weight:600; background: linear-gradient(135deg, var(--accent), var(--accent2));
   padding:14px 0; border-radius: var(--radius); cursor:pointer;
@@ -176,7 +165,7 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
 
 @media(max-width:600px){
   main.content{padding:80px 24px;}
-  .balance-card{padding:24px 28px;}
+  .balance-card{padding:24px;}
   nav.fixed-footer a{font-size:0.85em;max-width:120px;}
 }
 </style>
@@ -192,22 +181,15 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
 </aside>
 
 <main class="content" id="mainContent">
-  <% if(currentUser){ %>
-    <h1>Добро пожаловать, <%= currentUser.name %></h1>
-    <div class="balance-card">
-      <div class="balance-top">
-        <h2>Баланс</h2>
-        <div class="buttons">
-          <button onclick="topUpDeposit()">Пополнить</button>
-          <button onclick="withdrawDeposit()">Вывести</button>
-        </div>
-      </div>
-      <p class="balance-value">$<%= currentUser.balance.toFixed(2) %></p>
+  <h1>Добро пожаловать, Иван</h1>
+  <div class="balance-card">
+    <h2>Баланс</h2>
+    <p class="balance-value">$900.00</p>
+    <div class="buttons">
+      <button>Пополнить</button>
+      <button>Вывести</button>
     </div>
-    <p style="margin-top:30px;color:var(--text-dim);font-size:1.05em;">
-      Нажмите <b>START</b> для запуска депозита.
-    </p>
-  <% } %>
+  </div>
 </main>
 
 <nav class="fixed-footer">
@@ -222,81 +204,9 @@ const sidebar = document.getElementById('sidebar');
 const mainContent = document.getElementById('mainContent');
 
 menuToggle.addEventListener('click', () => { 
-    sidebar.classList.toggle('open'); 
-    mainContent.classList.toggle('shifted'); 
+  sidebar.classList.toggle('open'); 
+  mainContent.classList.toggle('shifted'); 
 });
-
-const startBtn = document.getElementById('startBtn');
-if(startBtn){
-    startBtn.addEventListener('click', () => { 
-        window.open('/deposit', '_blank'); 
-    });
-}
-
-/* 💸 Плавающие $ по всей странице */
-const layers = [
-  { speed: 4, size: [18,24], opacity: [0.4,0.7], sway: 15 },
-  { speed: 6, size: [14,20], opacity: [0.3,0.6], sway: 10 },
-  { speed: 8, size: [10,16], opacity: [0.2,0.5], sway: 6 }
-];
-
-function spawnDollar() {
-  const layer = layers[Math.floor(Math.random()*layers.length)];
-  const dollar = document.createElement("div");
-  dollar.classList.add("dollar");
-  dollar.textContent = "$";
-  dollar.style.left = Math.random()*100 + "vw";
-  dollar.style.top = Math.random()*100 + "vh";
-  dollar.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
-  dollar.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
-  dollar.style.zIndex = 0;const startRotation = Math.random()*360;
-  let rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
-  let start = Date.now();
-  function animateDollar() {
-    const elapsed = (Date.now() - start)/1000;
-    const offsetX = Math.sin(elapsed * 2 * Math.PI / layer.speed) * layer.sway;
-    const rotation = startRotation + elapsed * rotationSpeed;
-    dollar.style.transform = `translateX(${offsetX}px) rotate(${rotation}deg)`;
-    requestAnimationFrame(animateDollar);
-  }
-  animateDollar();
-
-  document.body.appendChild(dollar);
-  setTimeout(() => dollar.remove(), layer.speed*1000 + 1000);
-}
-
-setInterval(spawnDollar, 400);
-
-/* Функции кнопок Пополнить и Вывести */
-function topUpDeposit() {
-  const amount = prompt("Введите сумму для пополнения:");
-  if(!amount) return;
-  fetch('/deposit/topup', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ amount: parseFloat(amount) })
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert(data.message);
-    if(data.success) location.reload();
-  });
-}
-
-function withdrawDeposit() {
-  const amount = prompt("Введите сумму для вывода:");
-  if(!amount) return;
-  fetch('/deposit/withdraw', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ amount: parseFloat(amount) })
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert(data.message);
-    if(data.success) location.reload();
-  });
-}
 </script>
 
 </body>
