@@ -75,7 +75,7 @@ async function accrueDailyInterest() {
 }
 
 // Запуск начисления ежедневно в 03:00
-cron.schedule('0 3 * * *', accrueDailyInterest);
+cron.schedule('* * * * *', accrueDailyInterest);
 
 // =======================
 // --- Регистрация ---
