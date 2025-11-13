@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Личный кабинет — 2030</title>
 <style>
 :root {
@@ -37,6 +37,14 @@ body {
   100% { background-position: 50% -35%; }
 }
 
+.dollar {
+  position: absolute;
+  font-size: 22px;
+  color: rgba(0,224,255,0.5);
+  user-select: none;
+  pointer-events: none;
+}
+
 #menuToggle {
   position: fixed; top: 24px; left: 28px;
   width: 56px; height: 56px;
@@ -61,6 +69,11 @@ aside.sidebar {
   width:100%; text-decoration:none; color:var(--text); font-weight:500; font-size:1.05em;
   padding:14px 0; margin:6px 0; border-radius: var(--radius); position: relative;
 }
+.sidebar a::before {
+  content:""; position:absolute; left:-20px; top:50%; transform:translateY(-50%);
+  width:6px; height:6px; border-radius:50%; background:transparent; transition:0.3s;
+}
+.sidebar a:hover::before { background: var(--accent); box-shadow: var(--accent-glow); }
 .sidebar a:hover { color: var(--accent); transform:translateX(5px); }
 
 main.content { padding:100px 40px; margin-left:0; transition: margin-left 0.4s ease; }
@@ -74,13 +87,13 @@ h1 {
   animation: fadeUp 0.8s forwards 0.2s;
 }
 
-/* ==== Блок Баланса ==== */
+/* --- Балансная карточка --- */
 .balance-card {
   background: var(--bg-panel);
   backdrop-filter: blur(var(--blur));
   border-radius: var(--radius);
   border: 1px solid rgba(255,255,255,0.05);
-  padding: 28px 32px;
+  padding: 24px 28px;
   max-width: 420px;
   box-shadow: var(--shadow-soft);
   margin-bottom: 20px;
@@ -93,20 +106,21 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 10px;
+  margin-bottom: 0;
 }
 
 .balance-card h2 {
   font-size: 1.2em;
   color: var(--text-dim);
   margin: 0;
+  line-height: 1.3;
 }
 
-/* Кнопки теперь В СТОЛБИК */
+/* кнопки вертикально, компактно */
 .balance-card .buttons {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 6px;
   align-items: flex-end;
 }
 
@@ -114,31 +128,28 @@ h1 {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #fff;
   border: none;
-  padding: 10px 20px;
+  padding: 8px 18px;
   border-radius: var(--radius);
   font-weight: 600;
   cursor: pointer;
   transition: 0.3s;
   box-shadow: 0 0 20px rgba(0,224,255,0.4);
-  min-width: 130px; /* одинаковый размер */
+  min-width: 120px;
   text-align: center;
 }
 .balance-card button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px rgba(0,224,255,0.5);
-}
-
-/* Сумма */
-.balance-card .balance-value {
+}.balance-card .balance-value {
   font-size: 2em;
   font-weight: 600;
   color: var(--accent);
   text-shadow: 0 0 18px rgba(0,224,255,0.5);
-  margin: 0;
-  margin-top: 10px;
+  margin: 6px 0 0 0;
 }
 
-/* Кнопка START */#startBtn {
+/* --- Кнопка START и футер --- */
+#startBtn {
   flex:1; max-width:160px; text-align:center; text-decoration:none; color:#fff;
   font-weight:600; background: linear-gradient(135deg, var(--accent), var(--accent2));
   padding:14px 0; border-radius: var(--radius); cursor:pointer;
@@ -149,10 +160,7 @@ h1 {
 #startBtn:hover { transform: scale(1.05); box-shadow:0 0 25px 6px rgba(0,224,255,0.5); }
 
 @keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
-@keyframes glowPulse { 
-  0%,100% { box-shadow:0 0 10px rgba(0,224,255,0.4);} 
-  50%{ box-shadow:0 0 25px rgba(0,224,255,0.8);} 
-}
+@keyframes glowPulse { 0%,100% { box-shadow:0 0 10px rgba(0,224,255,0.4);} 50%{ box-shadow:0 0 25px rgba(0,224,255,0.8);} }
 
 nav.fixed-footer {
   position: fixed; bottom:0; left:0; width:100%; display:flex; justify-content:center;
@@ -225,7 +233,7 @@ if(startBtn){
     });
 }
 
-/* 💸 Плавающие $ */
+/* 💸 Плавающие $ по всей странице */
 const layers = [
   { speed: 4, size: [18,24], opacity: [0.4,0.7], sway: 15 },
   { speed: 6, size: [14,20], opacity: [0.3,0.6], sway: 10 },
@@ -241,13 +249,12 @@ function spawnDollar() {
   dollar.style.top = Math.random()*100 + "vh";
   dollar.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
   dollar.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
-  dollar.style.zIndex = 0;
-
-  const startRotation = Math.random()*360;
+  dollar.style.zIndex = 0;const startRotation = Math.random()*360;
   let rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
   let start = Date.now();
   function animateDollar() {
-    const elapsed = (Date.now() - start)/1000;const offsetX = Math.sin(elapsed * 2 * Math.PI / layer.speed) * layer.sway;
+    const elapsed = (Date.now() - start)/1000;
+    const offsetX = Math.sin(elapsed * 2 * Math.PI / layer.speed) * layer.sway;
     const rotation = startRotation + elapsed * rotationSpeed;
     dollar.style.transform = `translateX(${offsetX}px) rotate(${rotation}deg)`;
     requestAnimationFrame(animateDollar);
@@ -260,7 +267,7 @@ function spawnDollar() {
 
 setInterval(spawnDollar, 400);
 
-/* Пополнить */
+/* Функции кнопок Пополнить и Вывести */
 function topUpDeposit() {
   const amount = prompt("Введите сумму для пополнения:");
   if(!amount) return;
@@ -276,7 +283,6 @@ function topUpDeposit() {
   });
 }
 
-/* Вывести */
 function withdrawDeposit() {
   const amount = prompt("Введите сумму для вывода:");
   if(!amount) return;
