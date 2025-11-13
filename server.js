@@ -38,8 +38,6 @@ async function accrueDailyInterest() {
     try {
         const deposits = await Deposit.find({ status: 'active' });
         const today = new Date();
-
-        // --- Ставка из .env или по умолчанию 4.5% ---
         const DAILY_RATE = parseFloat(process.env.DAILY_RATE) || 0.045;
 
         for (let dep of deposits) {
@@ -67,6 +65,8 @@ async function accrueDailyInterest() {
 
                 await dep.save();
                 await user.save();
+
+                console.log(`Начислено ${interest.toFixed(2)}$ пользователю ${user.email}`);
             }
         }
     } catch (err) {
@@ -74,8 +74,10 @@ async function accrueDailyInterest() {
     }
 }
 
-// Запуск начисления ежедневно в 03:00
-cron.schedule('* * * * *', accrueDailyInterest);
+// =======================
+// --- Cron начисления процентов ---
+// Ежедневно в 03:00
+cron.schedule('0 3 * * *', accrueDailyInterest);
 
 // =======================
 // --- Регистрация ---
