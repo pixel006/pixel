@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Пополнение баланса</title>
+<style>
+body { font-family: sans-serif; padding: 20px; background:#101222; color:#fff; }
+input, button { padding: 10px; margin:5px 0; width:100%; border-radius:8px; border:none; }
+button { background: #00e0ff; color:#101222; cursor:pointer; }
+</style>
+</head>
+<body>
+<h3>Пополнить баланс</h3>
+<p>Текущий баланс: $<%= currentUser.balance.toFixed(2) %></p>
+<form method="POST" action="/deposit/topup">
+  <input type="number" name="amount" placeholder="Сумма (мин. 10$)" min="10" required>
+  <button type="submit">Пополнить</button>
+</form>
+</body>
+</html>

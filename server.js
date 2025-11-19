@@ -65,7 +65,6 @@ async function accrueDailyInterest() {
 
                 await dep.save();
                 await user.save();
-
                 console.log(`Начислено ${interest.toFixed(2)}$ пользователю ${user.email}`);
             }
         }
@@ -199,6 +198,25 @@ app.get('/deposit', async (req, res) => {
     }
 
     res.render('deposit', { currentUser: user, error: null, canDeposit });
+});
+
+// =======================
+// Окно подтверждения депозита
+app.get('/deposit/start', async (req, res) => {
+    if (!req.session.userId) return res.redirect('/login');
+
+    const user = await User.findById(req.session.userId);
+    const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
+    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
+    const sessionEmail = req.session.userEmail?.toLowerCase();
+    let canDeposit = true;
+
+    if (sessionEmail !== adminEmail && lastDeposit) {
+        const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
+        canDeposit = daysSinceLast >= 30;
+    }
+
+    res.render('depositStart', { currentUser: user, canDeposit, error: null });
 });
 
 // =======================
