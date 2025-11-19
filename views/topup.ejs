@@ -8,11 +8,21 @@
 body { font-family: sans-serif; padding: 20px; background:#101222; color:#fff; }
 input, button { padding: 10px; margin:5px 0; width:100%; border-radius:8px; border:none; }
 button { background: #00e0ff; color:#101222; cursor:pointer; }
+.error { color: #ff4c4c; font-weight: bold; }
+.success { color: #00ffaa; font-weight: bold; }
 </style>
 </head>
 <body>
 <h3>Пополнить баланс</h3>
 <p>Текущий баланс: $<%= currentUser.balance.toFixed(2) %></p>
+
+<% if (typeof error !== 'undefined') { %>
+    <p class="error"><%= error %></p>
+<% } %>
+<% if (typeof success !== 'undefined') { %>
+    <p class="success"><%= success %></p>
+<% } %>
+
 <form method="POST" action="/deposit/topup">
   <input type="number" name="amount" placeholder="Сумма (мин. 10$)" min="10" required>
   <button type="submit">Пополнить</button>

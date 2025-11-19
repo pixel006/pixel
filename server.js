@@ -222,20 +222,37 @@ app.get('/deposit/start', async (req, res) => {
 // =======================
 // Пополнение баланса
 app.get('/deposit/topup', async (req, res) => {
-    if (!req.session.userId) return res.redirect('/login');
-    const user = await User.findById(req.session.userId);
-    res.render('topup', { currentUser: user });
+    try {
+        if (!req.session.userId) return res.redirect('/login');   // Проверка авторизации
+        if (req.session.userId === "admin") return res.redirect('/admin');
+
+        const user = await User.findById(req.session.userId);
+        if (!user) return res.redirect('/login');
+
+        res.render('topup', { currentUser: user });  // Отображение формы пополнения
+    } catch (err) {
+        console.error('Ошибка GET /deposit/topup:', err);
+        res.status(500).send('Ошибка сервера');
+    }
 });
 
 app.post('/deposit/topup', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
-
-        const amount = parseFloat(req.body.amount);
-        if (!amount || amount < 10) return res.send("Минимальная сумма пополнения — 10$");
+        if (req.session.userId === "admin") return res.redirect('/admin');
 
         const user = await User.findById(req.session.userId);
+        if (!user) return res.redirect('/login');
+
+        const amount = parseFloat(req.body.amount);
+        if (!amount || amount < 10) {
+            return res.render('topup', { currentUser: user, error: 'Минимальная сумма — 10$' });
+        }
+
+        // Начисление суммы на баланс
         user.balance += amount;
+
+        // Добавление записи транзакции
         if (!user.transactions) user.transactions = [];
         user.transactions.push({
             type: 'deposit',
@@ -246,7 +263,10 @@ app.post('/deposit/topup', async (req, res) => {
         });
 
         await user.save();
-        res.redirect('/deposit');
+
+        // Отправка успеха на страницу
+        res.render('topup', { currentUser: user, success: `Баланс успешно пополнен на ${amount}$` });
+
     } catch (err) {
         console.error('Ошибка POST /deposit/topup:', err);
         res.status(500).send('Ошибка сервера');
