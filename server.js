@@ -205,6 +205,58 @@ app.get('/deposit', async (req, res) => {
 });
 
 // =======================
+// --- Страница пополнения баланса (GET) ---
+app.get('/deposit/topup', async (req, res) => {
+    try {
+        if (!req.session.userId) return res.redirect('/login');
+        if (req.session.userId === "admin") return res.redirect('/admin');
+
+        const user = await User.findById(req.session.userId);
+        if (!user) return res.redirect('/login');
+
+        res.render('topup', { currentUser: user });
+    } catch (err) {
+        console.error('Ошибка GET /deposit/topup:', err);
+        res.status(500).send('Ошибка сервера');
+    }
+});
+
+// =======================
+// --- Обработка пополнения баланса (POST) ---
+app.post('/deposit/topup', async (req, res) => {
+    try {
+        if (!req.session.userId) return res.redirect('/login');
+        if (req.session.userId === "admin") return res.redirect('/admin');
+
+        const amount = Number(req.body.amount);
+        if (!amount || amount < 10) {
+            return res.send("Минимальная сумма пополнения — 10$");
+        }
+
+        const user = await User.findById(req.session.userId);
+        if (!user) return res.redirect('/login');
+
+        user.balance += amount;
+
+        if (!user.transactions) user.transactions = [];
+        user.transactions.push({
+            type: 'deposit',
+            amount,
+            description: `Пополнение баланса на ${amount}$`,
+            date: new Date(),
+            status: 'completed'
+        });
+
+        await user.save();
+
+        res.redirect('/deposit');
+    } catch (err) {
+        console.error('Ошибка POST /deposit/topup:', err);
+        res.status(500).send('Ошибка сервера');
+    }
+});
+
+// =======================
 // --- POST /start-deposit ---
 app.post('/start-deposit', async (req, res) => {
     try {

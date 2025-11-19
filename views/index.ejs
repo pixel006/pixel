@@ -126,7 +126,7 @@ h1 {
   margin-top: 10px;
 }
 
-.balance-card button {
+.balance-card button, .balance-card a.button-link {
   background: linear-gradient(135deg, var(--accent), var(--accent2));
   color: #fff;
   border: none;
@@ -139,11 +139,14 @@ h1 {
   box-shadow: 0 0 20px rgba(0,224,255,0.4);
   min-width: 140px;
   text-align: center;
+  text-decoration: none;
+  display: inline-block;
 }
-.balance-card button:hover {
+.balance-card button:hover, .balance-card a.button-link:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px rgba(0,224,255,0.5);
-}.balance-card .balance-value {
+}
+.balance-card .balance-value {
   font-size: 2em;
   font-weight: 600;
   color: var(--accent);
@@ -204,7 +207,8 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
       <div class="balance-top">
         <h2>Баланс</h2>
         <div class="buttons">
-          <button onclick="topUpDeposit()">Пополнить</button>
+          <!-- Кнопка теперь ведет на /deposit/topup -->
+          <a href="/deposit/topup" class="button-link">Пополнить</a>
           <button onclick="withdrawDeposit()">Вывести</button>
         </div>
       </div>
@@ -266,29 +270,13 @@ function spawnDollar() {
     requestAnimationFrame(animateDollar);
   }
   animateDollar();
-
   document.body.appendChild(dollar);
   setTimeout(() => dollar.remove(), layer.speed*1000 + 1000);
 }
 
 setInterval(spawnDollar, 400);
 
-/* Функции кнопок Пополнить и Вывести */
-function topUpDeposit() {
-  const amount = prompt("Введите сумму для пополнения:");
-  if(!amount) return;
-  fetch('/deposit/topup', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ amount: parseFloat(amount) })
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert(data.message);
-    if(data.success) location.reload();
-  });
-}
-
+/* Функция кнопки Вывести */
 function withdrawDeposit() {
   const amount = prompt("Введите сумму для вывода:");
   if(!amount) return;

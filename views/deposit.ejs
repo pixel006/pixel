@@ -103,7 +103,7 @@ button:hover {
 const depositBtn = document.getElementById('depositBtn');
 const depositInput = document.getElementById('depositAmount');
 const notification = document.getElementById('notification');
-let userBalance = Number(<%= currentUser.balance.toFixed(2) %>);
+let userBalance = Number(`<%= currentUser.balance.toFixed(2) %>`);
 
 function showNotification(message, type = "success") {
   notification.textContent = message;
