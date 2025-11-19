@@ -52,8 +52,6 @@ button:hover {
   transform: scale(1.05);
   box-shadow: 0 0 25px rgba(0,224,255,0.6);
 }
-
-/* Уведомления */
 #notification {
   position: absolute;
   top: -60px;
@@ -71,12 +69,7 @@ button:hover {
 }
 #notification.success { background: linear-gradient(135deg, #00e0ff, #6a5acd); }
 #notification.error { background: linear-gradient(135deg, #ff4c4c, #ff0000); }
-#notification.show {
-  display: block;
-  opacity: 1;
-}
-
-/* 💰 Плавающие однотонные монеты */
+#notification.show { display: block; opacity: 1; }
 .coin {
   position: absolute;
   font-size: 22px;
@@ -91,12 +84,16 @@ button:hover {
 
 <div class="container">
   <div id="notification"></div>
-  <h2>Введите сумму депозита</h2>
+  <h2>Ваш баланс: $<%= currentUser.balance.toFixed(2) %></h2>
 
-  <p>Баланс: $<%= currentUser.balance.toFixed(2) %></p>
-  <input type="number" id="depositAmount" placeholder="Сумма" min="50" max="<%= currentUser.balance.toFixed(2) %>">
+  <!-- Кнопка Пополнить -->
+  <button id="topupBtn">Пополнить баланс</button>
 
-  <button id="depositBtn">Запустить</button>
+  <hr style="margin:20px 0; border-color: rgba(255,255,255,0.2)">
+
+  <!-- Ввод суммы депозита -->
+  <input type="number" id="depositAmount" placeholder="Сумма депозита" min="50" max="<%= currentUser.balance.toFixed(2) %>">
+  <button id="depositBtn">Запустить депозит</button>
 </div>
 
 <script>
@@ -109,26 +106,15 @@ function showNotification(message, type = "success") {
   notification.textContent = message;
   notification.className = '';
   notification.classList.add(type, 'show');
-  setTimeout(() => {
-    notification.classList.remove('show');
-  }, 3000);
+  setTimeout(() => notification.classList.remove('show'), 3000);
 }
 
+// Запуск депозита
 depositBtn.addEventListener('click', async () => {
   const amount = parseFloat(depositInput.value);
-
-  if (!amount || amount <= 0) {
-    showNotification("Введите сумму депозита", "error");
-    return;
-  }
-  if (amount < 50) {
-    showNotification("Минимальная сумма депозита — 50", "error");
-    return;
-  }
-  if (amount > userBalance) {
-    showNotification("Недостаточно средств", "error");
-    return;
-  }
+  if (!amount || amount <= 0) return showNotification("Введите сумму депозита", "error");
+  if (amount < 50) return showNotification("Минимальная сумма депозита — 50$", "error");
+  if (amount > userBalance) return showNotification("Недостаточно средств", "error");
 
   depositBtn.disabled = true;
   depositBtn.textContent = '...';
@@ -141,14 +127,11 @@ depositBtn.addEventListener('click', async () => {
     });
 
     if (!res.ok) throw new Error(`Ошибка HTTP: ${res.status}`);
-
     const data = await res.json();
 
     if (data.success) {
-      let msg = `Депозит на $${amount} запущен! Начислено ${data.firstInterest?.toFixed(2)}$`;
-      if (data.referralBonus) {
-        msg += `. Ваш реферал получил бонус ${data.referralBonus.toFixed(2)}$`;
-      }
+      let msg = `Депозит $${amount} запущен! Начислено ${data.newBalance - (userBalance - amount)}$`;
+      if (data.referralBonus) msg += `. Реферал получил бонус ${data.referralBonus.toFixed(2)}$`;
       showNotification(msg, "success");
       depositInput.value = '';
       userBalance = data.newBalance;
@@ -160,11 +143,16 @@ depositBtn.addEventListener('click', async () => {
     showNotification('Ошибка сервера', "error");
   } finally {
     depositBtn.disabled = false;
-    depositBtn.textContent = 'Запустить';
+    depositBtn.textContent = 'Запустить депозит';
   }
 });
 
-/* 💰 Анимация плавающих монет */
+// Пополнение через новое окно
+document.getElementById('topupBtn').addEventListener('click', () => {
+  window.open('/deposit/topup', '_blank', 'width=400,height=500,scrollbars=yes');
+});
+
+// Анимация монет
 const layers = [
   { speed: 4, size: [18,24], opacity: [0.4,0.7], sway: 15 },
   { speed: 6, size: [14,20], opacity: [0.3,0.6], sway: 10 },
@@ -180,7 +168,6 @@ function spawnCoin() {
   coin.style.top = Math.random()*100 + "vh";
   coin.style.fontSize = (Math.random()*(layer.size[1]-layer.size[0]) + layer.size[0]) + "px";
   coin.style.opacity = Math.random()*(layer.opacity[1]-layer.opacity[0]) + layer.opacity[0];
-
   const startRotation = Math.random()*360;
   let rotationSpeed = (Math.random()*30 + 15) * (Math.random() < 0.5 ? -1 : 1);
   let start = Date.now();
@@ -193,11 +180,9 @@ function spawnCoin() {
     requestAnimationFrame(animateCoin);
   }
   animateCoin();
-
   document.body.appendChild(coin);
   setTimeout(() => coin.remove(), layer.speed*1000 + 1000);
 }
-
 setInterval(spawnCoin, 400);
 </script>
 
