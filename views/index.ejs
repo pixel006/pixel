@@ -179,7 +179,7 @@ nav.fixed-footer a:hover { color: var(--accent); transform: translateY(-2px); bo
       <div class="balance-top">
         <h2>Баланс</h2>
         <div class="buttons">
-          <a href="/deposit/start" class="button-link">Пополнить</a>
+          <a href="/deposit/start" class="button-link" target="_blank">Пополнить</a>
           <button onclick="withdrawDeposit()">Вывести</button>
         </div>
       </div>
@@ -248,18 +248,8 @@ function spawnDollar() {
 setInterval(spawnDollar, 400);
 
 function withdrawDeposit() {
-  const amount = prompt("Введите сумму для вывода:");
-  if(!amount) return;
-  fetch('/deposit/withdraw', {
-    method: 'POST',
-    headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({ amount: parseFloat(amount) })
-  })
-  .then(res => res.json())
-  .then(data => {
-    alert(data.message);
-    if(data.success) location.reload();
-  });
+  // Открываем новое окно для вывода средств
+  window.open('/withdraw', '_blank', 'width=400,height=500,scrollbars=yes');
 }
 </script>
 
