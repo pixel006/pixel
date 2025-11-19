@@ -11,7 +11,7 @@ const Deposit = require('./models/Deposit');
 const app = express();
 
 // =======================
-// --- Настройки EJS и статики ---
+// Настройки EJS и статики
 app.set('view engine', 'ejs');
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -19,7 +19,7 @@ app.use(methodOverride('_method'));
 app.use(express.static('public'));
 
 // =======================
-// --- Сессии ---
+// Сессии
 app.use(session({
     secret: 'supersecretkey',
     resave: false,
@@ -27,13 +27,13 @@ app.use(session({
 }));
 
 // =======================
-// --- Подключение к MongoDB ---
+// Подключение к MongoDB
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('MongoDB connected ✅'))
     .catch(err => console.log('MongoDB connection error:', err));
 
 // =======================
-// --- Метод comparePassword в User ---
+// Метод comparePassword для User
 if (!User.schema.methods.comparePassword) {
     User.schema.methods.comparePassword = async function(candidatePassword) {
         return await bcrypt.compare(candidatePassword, this.password);
@@ -41,11 +41,12 @@ if (!User.schema.methods.comparePassword) {
 }
 
 // =======================
-// --- Функция начисления процентов ---
+// Начисление процентов
 async function accrueDailyInterest() {
     try {
         const deposits = await Deposit.find({ status: 'active' });
         const today = new Date();
+        const DAILY_RATE = 0.045;
 
         for (let dep of deposits) {
             const user = await User.findById(dep.userId);
@@ -53,7 +54,7 @@ async function accrueDailyInterest() {
 
             const days = Math.floor((today - dep.lastInterestDate) / (1000 * 60 * 60 * 24));
             if (days > 0 && dep.remainingDays > 0) {
-                const interest = dep.principal * 0.045;
+                const interest = dep.principal * DAILY_RATE;
                 dep.accrued += interest;
                 dep.remainingDays -= 1;
                 dep.lastInterestDate = today;
@@ -79,11 +80,11 @@ async function accrueDailyInterest() {
     }
 }
 
-// --- Запуск cron каждый день в 03:00 ---
+// Cron: начисление процентов каждый день в 03:00
 cron.schedule('0 3 * * *', accrueDailyInterest);
 
 // =======================
-// --- Регистрация ---
+// Регистрация
 app.get('/register', (req, res) => res.render('register', { error: null }));
 
 app.post('/register', async (req, res) => {
@@ -133,7 +134,7 @@ app.post('/register', async (req, res) => {
 });
 
 // =======================
-// --- Логин ---
+// Логин
 app.get('/login', (req, res) => res.render('login', { error: null }));
 
 app.post('/login', async (req, res) => {
@@ -169,7 +170,7 @@ app.post('/login', async (req, res) => {
 });
 
 // =======================
-// --- Главная страница ---
+// Главная страница
 app.get('/', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -186,8 +187,7 @@ app.get('/', async (req, res) => {
 });
 
 // =======================
-// --- Deposit страницы ---
-// =======================
+// Deposit
 app.get('/deposit', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -195,7 +195,7 @@ app.get('/deposit', async (req, res) => {
 
         const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-        const sessionEmail = req.session.userEmail ? req.session.userEmail.toLowerCase() : null;
+        const sessionEmail = req.session.userEmail?.toLowerCase();
         let canDeposit = true;
 
         if (sessionEmail !== adminEmail && lastDeposit) {
@@ -210,27 +210,23 @@ app.get('/deposit', async (req, res) => {
     }
 });
 
-// --- Окно подтверждения депозита ---
+// Новый рабочий маршрут для запуска депозита
 app.get('/deposit/start', async (req, res) => {
     if (!req.session.userId) return res.redirect('/login');
+    if (req.session.userId === "admin") return res.redirect('/admin');
 
-    const user = await User.findById(req.session.userId);
-    if (!user) return res.redirect('/login');
+    try {
+        const user = await User.findById(req.session.userId);
+        if (!user) return res.redirect('/login');
 
-    const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-    const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-    const sessionEmail = req.session.userEmail?.toLowerCase();
-    let canDeposit = true;
-
-    if (sessionEmail !== adminEmail && lastDeposit) {
-        const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
-        canDeposit = daysSinceLast >= 30;
+        res.render('deposit', { currentUser: user });
+    } catch (err) {
+        console.error('Ошибка GET /deposit/start:', err);
+        res.status(500).send('Ошибка сервера');
     }
-
-    res.render('depositStart', { currentUser: user, canDeposit, error: null });
 });
 
-// --- Запуск депозита ---
+// POST запуск депозита
 app.post('/start-deposit', async (req, res) => {
     try {
         if (!req.session.userId)
@@ -238,33 +234,27 @@ app.post('/start-deposit', async (req, res) => {
 
         const { amount } = req.body;
         const numericAmount = parseFloat(amount);
-
         if (!numericAmount || numericAmount <= 0)
             return res.json({ success: false, message: 'Введите корректную сумму' });
-
         if (numericAmount < 50)
             return res.json({ success: false, message: 'Минимальная сумма депозита — 50$' });
 
         const user = await User.findById(req.session.userId);
         if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
-
         if (numericAmount > user.balance)
             return res.json({ success: false, message: 'Недостаточно средств' });
 
+        const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-        const sessionEmail = req.session.userEmail ? req.session.userEmail.toLowerCase() : null;
+        const sessionEmail = req.session.userEmail?.toLowerCase();
 
-        if (sessionEmail !== adminEmail) {
-            const lastDeposit = await Deposit.findOne({ userId: user._id }).sort({ createdAt: -1 });
-            if (lastDeposit) {
-                const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
-                if (daysSinceLast < 30) {
-                    return res.json({
-                        success: false,
-                        message: `Вы уже запускали депозит ${Math.floor(daysSinceLast)} дней назад. Новый можно будет через ${Math.ceil(30 - daysSinceLast)} дней.`
-                    });
-                }
-            }
+        if (sessionEmail !== adminEmail && lastDeposit) {
+            const daysSinceLast = (new Date() - lastDeposit.createdAt) / (1000 * 60 * 60 * 24);
+            if (daysSinceLast < 30)
+                return res.json({
+                    success: false,
+                    message: `Вы уже запускали депозит ${Math.floor(daysSinceLast)} дней назад. Новый можно через ${Math.ceil(30 - daysSinceLast)} дней.`
+                });
         }
 
         user.balance -= numericAmount;
@@ -308,7 +298,6 @@ app.post('/start-deposit', async (req, res) => {
             message: `Депозит на $${numericAmount} запущен! Начислено ${firstInterest.toFixed(2)}$`,
             newBalance: user.balance
         });
-
     } catch (err) {
         console.error('Ошибка POST /start-deposit:', err);
         res.status(500).json({ success: false, message: 'Ошибка при запуске депозита, попробуйте позже' });
@@ -316,11 +305,11 @@ app.post('/start-deposit', async (req, res) => {
 });
 
 // =======================
-// --- Админка ---
+// Админка
 app.get('/admin', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-        const sessionEmail = req.session.userEmail ? req.session.userEmail.toLowerCase() : null;
+        const sessionEmail = req.session.userEmail?.toLowerCase();
         if (!req.session.userId || sessionEmail !== adminEmail) {
             return res.status(403).send('Доступ запрещён');
         }
@@ -333,14 +322,14 @@ app.get('/admin', async (req, res) => {
     }
 });
 
-// --- Пополнение/Вывод админом ---
+// =======================
+// Admin пополнение и вывод
 app.post('/admin/deposit/:id', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-        const sessionEmail = req.session.userEmail ? req.session.userEmail.toLowerCase() : null;
-        if (!req.session.userId || sessionEmail !== adminEmail) {
+        const sessionEmail = req.session.userEmail?.toLowerCase();
+        if (!req.session.userId || sessionEmail !== adminEmail)
             return res.status(403).json({ success: false, message: 'Доступ запрещён' });
-        }
 
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
@@ -369,10 +358,9 @@ app.post('/admin/deposit/:id', async (req, res) => {
 app.post('/admin/withdraw/:id', async (req, res) => {
     try {
         const adminEmail = process.env.ADMIN_EMAIL?.toLowerCase();
-        const sessionEmail = req.session.userEmail ? req.session.userEmail.toLowerCase() : null;
-        if (!req.session.userId || sessionEmail !== adminEmail) {
+        const sessionEmail = req.session.userEmail?.toLowerCase();
+        if (!req.session.userId || sessionEmail !== adminEmail)
             return res.status(403).json({ success: false, message: 'Доступ запрещён' });
-        }
 
         const user = await User.findById(req.params.id);
         if (!user) return res.status(404).json({ success: false, message: 'Пользователь не найден' });
@@ -400,7 +388,7 @@ app.post('/admin/withdraw/:id', async (req, res) => {
 });
 
 // =======================
-// --- Logout ---
+// Logout
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
@@ -412,7 +400,7 @@ app.get('/logout', (req, res) => {
 });
 
 // =======================
-// --- История депозитов и транзакций ---
+// История депозитов и транзакций
 app.get('/history', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -436,7 +424,7 @@ app.get('/history', async (req, res) => {
 });
 
 // =======================
-// --- Страница группы ---
+// Группа / рефералы
 app.get('/group', async (req, res) => {
     try {
         if (!req.session.userId) return res.redirect('/login');
@@ -459,7 +447,7 @@ app.get('/group', async (req, res) => {
 });
 
 // =======================
-// --- Страница настроек пароля ---
+// Настройки пароля
 app.get('/settings', async (req, res) => {
     if (!req.session.userId || req.session.userId === "admin") return res.redirect('/login');
     const user = await User.findById(req.session.userId);
@@ -471,12 +459,12 @@ app.post('/settings', async (req, res) => {
         const { oldPassword, newPassword, confirmPassword } = req.body;
         const user = await User.findById(req.session.userId);
 
-        if (newPassword !== confirmPassword) {
+        if (newPassword !== confirmPassword)
             return res.render('settings', { currentUser: user, error: 'Пароли не совпадают', success: null });
-        }
 
         const isMatch = await bcrypt.compare(oldPassword, user.password);
-        if (!isMatch) return res.render('settings', { currentUser: user, error: 'Старый пароль неверный', success: null });
+        if (!isMatch)
+            return res.render('settings', { currentUser: user, error: 'Старый пароль неверный', success: null });
 
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(newPassword, salt);
@@ -490,6 +478,6 @@ app.post('/settings', async (req, res) => {
 });
 
 // =======================
-// --- Запуск сервера ---
+// Запуск сервера
 const PORT = process.env.PORT ?? 3000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT} 🚀`));
